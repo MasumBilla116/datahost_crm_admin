@@ -507,7 +507,6 @@ const index = () => {
                               onChange={(e) => { setCustomerId(e.value); setCustomerName(e.label) }}
                               defaultValue={selected_customer}
 
-
                             />
                           }
 

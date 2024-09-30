@@ -9,9 +9,11 @@ import ML_Housekeeping from "./moduleList/Housekeeping";
 import ML_Inventory from "./moduleList/Inventory";
 import ML_Locker from "./moduleList/Locker";
 import ML_Purchase from "./moduleList/Purchase";
+import ML_RoomService from "./moduleList/RoomService";
 import ML_Settings from "./moduleList/Settings";
 import ML_Suppliers from "./moduleList/Suppliers";
 import ML_Transport from "./moduleList/Transport";
+import ML_Booking from "./moduleList/Booking";
 
 
 export default function LeftSidebar2() {
@@ -56,8 +58,6 @@ export default function LeftSidebar2() {
           <ul className="sidebar-nav">
             {activeModule === "hrm" && <ML_Hrm pathname={pathname}/>}
             {activeModule === "customer" && <ML_Customer pathname={pathname}/>}
-             {/* {activeModule === "bookings" && <ML_Booking pathname={pathname}/>} */}
-            {/* {activeModule === "room-service" && <ML_RoomService pathname={pathname}/>} */}
             {activeModule === "housekeeping" && <ML_Housekeeping pathname={pathname}/>} 
             {activeModule === "locker" && <ML_Locker pathname={pathname}/>}
             {activeModule === "transport" && <ML_Transport pathname={pathname}/>}

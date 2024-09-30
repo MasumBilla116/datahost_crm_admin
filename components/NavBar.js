@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, {
-  Fragment,
   useCallback,
   useContext,
   useEffect,
-  useState,
+  useState
 } from "react";
 import { Button } from "react-bootstrap";
 import DataTable from "react-data-table-component";
@@ -335,89 +334,9 @@ export default function NavBar() {
             </div>
           </div>
           <div>
-            <ul className="d-flex justify-content-end m-0 list-style-none">
-              {CheckAccessCode('m.bkng.mng.crt_updt', userId, permission) && (
-                <li className="nav-item">
-                  <Link href="/modules/bookings/create">
-                    <a
-                      className={`nav-link`}
-                      onClick={(e) =>
-                        setModuleItems(e, {
-                          moduleName: "bookings",
-                          moduleUrl: "/modules/bookings/create",
-                        })
-                      }
-                    >
-                      <Button
-                        type="button"
-                        className="btn btn-sm btn-info rounded-0"
-                        style={{
-                          color: "black",
-                          backgroundColor: "white",
-                          height: "35px",
-                          border: "none",
-                        }}
-                      >
-                        Create Booking
-                      </Button>
-                    </a>
-                  </Link>
-                </li>)}
-              {CheckAccessCode('m.rm_tr.rm', userId, permission) && (
-                <li className="nav-item">
-                  <Link href="/modules/room-tower/manage-room">
-                    <a
-                      className={`nav-link`}
-                      onClick={(e) =>
-                        setModuleItems(e, {
-                          moduleName: "room-tower",
-                          moduleUrl: "/modules/room-tower/manage-room",
-                        })
-                      }
-                    >
-                      <Button
-                        type="button"
-                        className="btn btn-sm btn-info rounded-0"
-                        style={{
-                          color: "black",
-                          backgroundColor: "white",
-                          height: "35px",
-                          border: "none",
-                        }}
-                      >
-                        Room Availability
-                      </Button>
-                    </a>
-                  </Link>
-                </li>)}
-              {CheckAccessCode('room_rate', userId, permission) && (
-                <li className="nav-item ">
-                  <Link href="/modules/room-tower/manage-room/price">
-                    <a
-                      className="nav-link"
-                      onClick={(e) =>
-                        setModuleItems(e, {
-                          moduleName: "room-tower",
-                          moduleUrl: "/modules/room-tower/manage-room/price",
-                        })
-                      }
-                    >
-                      <Button
-                        type="button"
-                        className="btn btn-sm btn-info rounded-0"
-                        style={{
-                          color: "black",
-                          backgroundColor: "white",
-                          height: "35px",
-                          border: "none",
-                        }}
-                      >
-                        Room Rates
-                      </Button>
-                    </a>
-                  </Link>
-                </li>)}
-              {CheckAccessCode('m.stng.crncy_stng', userId, permission) && (
+            <ul className="d-flex justify-content-end m-0 list-style-none"> 
+                
+              {/* {CheckAccessCode('m.stng.crncy_stng', userId, permission) && (
                 <li className="nav-item dropdown currencyDropdown">
                   <a
                     className="nav-link dropdown-toggle waves-effect waves-dark position-relative"
@@ -434,7 +353,7 @@ export default function NavBar() {
                         height: "35px",
                         border: "none",
                       }}
-                    >
+                    > 
                       <span className="">{selectedCurrency?.symbol}</span>
                       <span className="mx-2" style={{ color: "#bbb" }}>
                         |
@@ -475,7 +394,7 @@ export default function NavBar() {
                       </Fragment>
                     ))}
                   </div>
-                </li>)}
+                </li>)} */}
               <li className="nav-item d-flex justify-content-center align-items-center">
                 <div
                   className="d-block"
@@ -558,21 +477,7 @@ export default function NavBar() {
                 </li>}
 
               <li className="nav-item dropdown profileMenu px-0">
-                {/* <a
-                  className="nav-link dropdown-toggle waves-effect waves-dark d-flex justify-content-center align-items-center"
-                  href="#"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                  style={{ color: settingsObj?.text_color }}
-                >
-                  <img
-                    src="/assets/images/users/1.jpg"
-                    alt="user"
-                    className="w-100"
-                    style={{ height: "60px", border: "none" }}
-                  />
-                </a> */}
+                 
 
               <a
                 className="nav-link profileText dropdown-toggle waves-effect waves-dark d-flex justify-content-center align-items-center"
@@ -614,34 +519,7 @@ export default function NavBar() {
                           <p className="mb-0">{user?.email}</p>
                         </div>
                       </div>
-                      {/* <a className="dropdown-item mt-2" href="#">
-                                                <i
-                                                    data-feather="user"
-                                                    className="feather-sm text-info me-1 ms-4"
-                                                ></i>
-                                                My Profile
-                                            </a>
-                                            <a className="dropdown-item" href="#">
-                                                <i
-                                                    data-feather="credit-card"
-                                                    className="feather-sm text-primary me-1 ms-4"
-                                                ></i>
-                                                My Balance
-                                            </a>
-                                            <a className="dropdown-item" href="#">
-                                                <i
-                                                    data-feather="mail"
-                                                    className="feather-sm text-success me-1 ms-4"
-                                                ></i>
-                                                Inbox
-                                            </a> 
-                                            <a className="dropdown-item" href="#">
-                                                <i
-                                                    data-feather="settings"
-                                                    className="feather-sm text-warning me-1 ms-4"
-                                                ></i>
-                                                Account Setting
-                                            </a>  */}
+                       
                       <Link href="/accounts">
                         <a className="dropdown-item" href="#">
                           <i
@@ -753,66 +631,7 @@ export default function NavBar() {
                 </a>
               </Link>
             )}
-            {CheckAccessCode("m.bkng", userId, permission) && false && (
-              <Link href="/modules/bookings">
-                <a
-                  className={`module-route active-${moduleNameString === "bookings"}`}
-                  onClick={(e) =>
-                    setModuleItems(e, {
-                      moduleName: "bookings",
-                      moduleUrl: "/modules/bookings",
-                    })
-                  }
-                >
-                  {/* <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="14"
-                    width="14"
-                    viewBox="0 0 448 512"
-                    style={{ fill: "#555", display: "flex", marginTop: "-1px" }}
-                  >
-                    <path d="M436 160c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12h-20V48c0-26.5-21.5-48-48-48H48C21.5 0 0 21.5 0 48v416c0 26.5 21.5 48 48 48h320c26.5 0 48-21.5 48-48v-48h20c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12h-20v-64h20zm-228-32c35.3 0 64 28.7 64 64s-28.7 64-64 64-64-28.7-64-64 28.7-64 64-64zm112 236.8c0 10.6-10 19.2-22.4 19.2H118.4C106 384 96 375.4 96 364.8v-19.2c0-31.8 30.1-57.6 67.2-57.6h5c12.3 5.1 25.7 8 39.8 8s27.6-2.9 39.8-8h5c37.1 0 67.2 25.8 67.2 57.6v19.2z" />
-                  </svg> */}
-                  <span className="hide-menu" style={{ marginLeft: "5px" }}>
-                    booking
-                  </span>
-                </a>
-              </Link>
-            )}
-            {CheckAccessCode("m.rm_srvs", userId, permission) &&  false &&  (
-              <Link href="/modules/room-service">
-                <a
-                  className={`module-route active-${moduleNameString === "room-service"}`}
-                  onClick={(e) =>
-                    setModuleItems(e, {
-                      moduleName: "room-service",
-                      moduleUrl: "/modules/room-service",
-                    })
-                  }
-                >
-                  {/* <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="14"
-                    width="14"
-                    viewBox="0 0 448 512"
-                    style={{ fill: "#555", display: "flex", marginTop: "-1px" }}
-                  >
-                    <path
-                      d="M256.5 216.8l86.7 109.2s-16.6 102.4-76.6 150.1C206.7 523.9 0 510.2 0 510.2s3.8-23.1 11-55.4l94.6-112.2c4-4.7-.9-11.6-6.7-9.5l-60.4 22.1c14.4-41.7 32.7-80 54.6-97.5 60-47.8 163.3-40.9 163.3-40.9zM636.5 31l-19.9-25c-5.5-6.9-15.5-8.1-22.4-2.6l-232.5 177.8-34.1-43c-5.1-6.4-15.1-5.2-18.6 2.2l-25.3 54.6 86.7 109.2 58.8-12.5c8-1.7 11.4-11.2 6.3-17.6l-34.1-42.9 232.5-177.8c6.9-5.5 8-15.5 2.6-22.4"
-                      style={{
-                        fill: "#555",
-                        display: "flex",
-                        marginTop: "-1px",
-                      }}
-                    />
-                  </svg> */}
-                  <span className="hide-menu" style={{ marginLeft: "5px" }}>
-                    Guest Service
-                  </span>
-                </a>
-              </Link>
-            )} 
-            
+                         
             {CheckAccessCode("m.lckr", userId, permission) && (
               <Link href="/modules/locker">
                 <a
@@ -893,60 +712,8 @@ export default function NavBar() {
                   </span>
                 </a>
               </Link>
-            )}
-            {/* {CheckAccessCode("m.prchs", userId, permission) && (
-              <Link href="/modules/purchase">
-                <a
-                  className={`module-route active-${moduleNameString === "purchase"}`}
-                  onClick={(e) =>
-                    setModuleItems(e, {
-                      moduleName: "purchase",
-                      moduleUrl: "/modules/purchase",
-                    })
-                  }
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="14"
-                    width="14"
-                    viewBox="0 0 576 512"
-                    style={{ fill: "#555", display: "flex", marginTop: "-1px" }}
-                  >
-                    <path d="M64 64C28.7 64 0 92.7 0 128V384c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H64zm64 320H64V320c35.3 0 64 28.7 64 64zM64 192V128h64c0 35.3-28.7 64-64 64zM448 384c0-35.3 28.7-64 64-64v64H448zm64-192c-35.3 0-64-28.7-64-64h64v64zM288 160a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
-                  </svg>
-                  <span className="hide-menu" style={{ marginLeft: "5px" }}>
-                    Purchase
-                  </span>
-                </a>
-              </Link>
-            )} */}
-            {/* {CheckAccessCode("m.splr", userId, permission) && (
-              <Link href="/modules/supplier">
-                <a
-                  className={`module-route mobule-breaking-point active-${moduleNameString === "supplier"
-                    }`}
-                  onClick={(e) =>
-                    setModuleItems(e, {
-                      moduleName: "supplier",
-                      moduleUrl: "/modules/supplier",
-                    })
-                  }
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="14"
-                    width="14"
-                    viewBox="0 0 576 512"
-                    style={{ fill: "#555", display: "flex", marginTop: "-1px" }}
-                  >
-                    <path d="M64 64C28.7 64 0 92.7 0 128V384c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H64zm64 320H64V320c35.3 0 64 28.7 64 64zM64 192V128h64c0 35.3-28.7 64-64 64zM448 384c0-35.3 28.7-64 64-64v64H448zm64-192c-35.3 0-64-28.7-64-64h64v64zM288 160a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
-                  </svg>
-                  <span className="hide-menu" style={{ marginLeft: "5px" }}>
-                    Supplier
-                  </span>
-                </a>
-              </Link>
-            )} */}
+            )}            
+             
             {CheckAccessCode("m.acnt", userId, permission) && (
               <Link href="/modules/accounts">
                 <a
