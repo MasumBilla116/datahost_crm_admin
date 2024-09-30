@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve"
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "pages/modules/customer/view/[id].js",
+    "pages/index.js",
+    "pages/test/tree.js",
+    "pages/admin/role/index.js",
+    "pages/admin/permission/index.js",
+    "pages/api/hello.js",
+    "pages/modules/accounts/create/index.jsx",
+    "pages/modules/hrm/department/index.jsx",
+    "pages/modules/locker/list.jsx"
+, "pages/modules/customer/general/index.tsx"  ],
+  "exclude": ["node_modules"]
+}

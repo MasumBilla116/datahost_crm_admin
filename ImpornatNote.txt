@@ -1,0 +1,46 @@
+-------------------------Booking Modules start---------------------------
+###
+Booking Invoice
+http://localhost:3000/modules/bookings/invoice/frontDesk/U2FsdGVkX1+A5gkjFW0gM4emUaULmBnPZttGHhmUpVM=
+
+hide button in bottom => Refund, check-in, cancle, view-Ledger
+
+
+Remarks static chilo tai etake hide kore diya hoiche
+###
+
+-------------------------Booking Modules End---------------------------
+
+
+
+
+
+
+
+
+
+
+-------------------------restaurant Modules start---------------------------
+http://localhost:3000/modules/restaurant/manage-order/create-inv
+http://localhost:3000/modules/restaurant/manage-order/update/3
+
+in restaurant modules net total amount not working
+
+
+-------------------------restaurant Modules start---------------------------
+
+
+
+
+
+
+
+
+
+
+
+-------------------------Room Service Modules start---------------------------
+
+hide button in bottom => Proceed to payment
+
+-------------------------Room Service Modules End---------------------------
