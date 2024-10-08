@@ -13,7 +13,6 @@ import format from 'date-fns/format';
 import { Button, Form } from "react-bootstrap";
 import Table from 'react-bootstrap/Table';
 import { DeleteIcon, HeadSection } from '../../../../components';
-import PropagateLoading from '../../../../components/PropagateLoading';
 import toast from "../../../../components/Toast/index";
 import Axios from '../../../../utils/axios';
 import { getSSRProps } from '../../../../utils/getSSRProps';
@@ -61,6 +60,7 @@ const CreateInvoice = ({accessPermissions}) => {
 
   const [allSupplier, setAllSupplier] = useState([]);       /**Getting Suppliers */
   const items_options = getItems.data;
+ 
 
   /** Category Part*/
   const [categoryId, setCategoryId] = useState("");
@@ -124,10 +124,9 @@ const CreateInvoice = ({accessPermissions}) => {
       qty: parseInt(quantity),
       total: parseInt(total),
       itemId: itemId,
-      itemName: itemName,
-      remarks: remarks,
-      itemCode: itemCode,
-      itemCodeName: itemCodeName
+      unitTypeId: "",
+      itemName: itemName, 
+      salesPrice: parseInt(0),
     }
     ])
     reset()
@@ -279,12 +278,13 @@ const CreateInvoice = ({accessPermissions}) => {
       setItemCodeName(e.label)
     }
   }
-  async function submitForm(e) {
-    e.preventDefault();
+  async function submitForm(e) { 
+    e.preventDefault();  
+
     if (supplierName && SupplierInvoiceNumber) {
       setLoading(true)
       let body = {
-        action: "createSupplierInvoiceItem",
+        action: "purchase",
         invoice: invoice,
         status: true,
         localInv: localInv,
@@ -295,11 +295,10 @@ const CreateInvoice = ({accessPermissions}) => {
         supplierName: supplierName
       }
 
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/invoice`, body)
+      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`, body)
         .then((res) => {
           setLoading(false)
-          notify("success", "successfully Added!");
-          // setInvoice([])
+          notify("success", "Purchase successfully Added!"); 
           router.push(`/modules/purchase/invoice`)
         })
       setGrandTotal(0)
@@ -482,6 +481,42 @@ const CreateInvoice = ({accessPermissions}) => {
     { text: 'Create Supplier ', link: '/modules/purchase/invoice/inv-item' },
   ];
 
+
+  // @@ handle to change unit price
+  const handleToChangeUnitPrice = (event,item) =>{
+     
+    const newUnitPrice = event.target.value;
+    if(newUnitPrice == item.unitPrice) return;
+
+    const updateUnitPriceInvoice = invoice.map(row=>{
+      if(row.id == item.id){
+         return {...row,unitPrice:newUnitPrice};
+      }
+      return row;
+    })
+    setInvoice(updateUnitPriceInvoice);
+    
+  }
+
+   // @@ handle to change unit price
+   const handleToChangeSalesPrice = (event,item) =>{
+     
+    const newUnitPrice = event.target.value;
+    if(newUnitPrice == item.salesPrice) return;
+
+    const updateUnitPriceInvoice = invoice.map(row=>{
+      if(row.id == item.id){
+         return {...row,salesPrice:newUnitPrice};
+      }
+      return row;
+    })
+    setInvoice(updateUnitPriceInvoice);
+    
+  }
+
+
+  const inputStyle = {border: "1px solid #8a847b33", width: "107px", borderRadius: "5px",color:"#484848"};
+
   return (
     <>
       <div className="container-fluid ">
@@ -495,18 +530,18 @@ const CreateInvoice = ({accessPermissions}) => {
                   <strong className='fw-bolder'>
                     Create New Purchase Invoice
                   </strong>
-                </h4>
                 {/* <div> 
                   <strong className='fw-bolder'>
                     # {localInvNumber}
                   </strong>
                 </div> */}
+                </h4>
               </div>
               <div className="card-body">
                 <Form>
-                  <div className='row' className='mb-4' style={{borderBottom:'2px solid gray'}}>
+                  <div className='row' className='mb-4' style={{borderBottom:' 2px solid #8080803d'}}>
                     <div className='col-md-12 p-0'>
-                      <div className='mb-5 row'>
+                      <div className='mb-4 row'>
                         <Form.Group className='col-md-6'>
                           <Form.Label>Supplier Name:</Form.Label>
                           
@@ -558,11 +593,7 @@ const CreateInvoice = ({accessPermissions}) => {
                               onChange={(event) => {
                                 setDate(format(new Date(event), 'yyyy-MM-dd'));
                               }}
-
-
-                              // variant="inline"
-                              // openTo="year"
-                              // views={["year", "month", "day"]}
+ 
 
                               renderInput={(params) =>
                                 <ThemeProvider theme={theme}>
@@ -572,32 +603,16 @@ const CreateInvoice = ({accessPermissions}) => {
                             />
                           </LocalizationProvider>
                         </Form.Group>
-                      </div>
-
-                      {/* {supplierDetails?.map((info) => {
-                        return (
-                          <>
-                            <div className='pr-5 m-auto'>
-                              <div className='mb-1'>
-                                <span className="badge font-weight-medium bg-light-primary text-primary"><span className='text-dark'>Name: </span>{info?.name}</span>&nbsp;
-                                <span className="badge font-weight-medium bg-light-primary text-primary"><span className='text-dark'>Contact number: </span>{info?.contact_number}</span>&nbsp;
-                                <span className="badge font-weight-medium bg-light-primary text-primary"><span className='text-dark'>Address: </span>{info?.address}</span>&nbsp;
-                                <span className="badge font-weight-medium bg-light-primary text-primary"><span className='text-dark'>Balance: </span>{info?.balance}</span>&nbsp;
-                              </div>
-                            </div>
-                          </>
-                        )
-                      })}
-                      {supplierInfoloading && <div className='text-center'>
-                        <div className="text-center">
-                          <PropagateLoading />
-                        </div>
-                      </div>} */}
+                      </div>  
+                    </div> 
+                    
+                  <div className="d-flex justify-content-end align-items-end">
+                      <p className=''>
+                      {localInv}
+                    </p> 
+                  </div>
 
 
-
-
-                    </div>
 
                   </div>
                   <div className="row mt-2 mb-3">
@@ -605,14 +620,11 @@ const CreateInvoice = ({accessPermissions}) => {
                       <Form.Label>Item Select</Form.Label>
                       <Select2
                         // className="select-bg"
-                        options={items_options?.map(({ id, name, unit_cost, code }) => ({ value: id, label:`${code}--${name}`, unitCost: unit_cost, code: code }))}
+                        options={items_options?.map(({ item_id,unit_type_id, item_name, item_type_name, category_name }) => ({ value: item_id, unit_type_id:unit_type_id,  label:`${category_name} -- ${item_name}  (${item_type_name})`}))}
                         value={item_name_options}
-                        onChange={(e) => {
-                          setItemCode(e.value);
-                          setItemCodeName(e.code)
+                        onChange={(e) => { 
                           setItemId(e.value);
-                          setItemName(e.label.split('--')[1]);
-                          setUnitPrice(e.unitCost);
+                          setItemName(e.label.split('--')[1]); 
 
                           //if already selected, not selected
                           if (!inv_item_ids.includes(e.value)) {
@@ -621,14 +633,13 @@ const CreateInvoice = ({accessPermissions}) => {
   
                             setInvoice((prev)=>[...prev,{
                               id: ind,
-                              unitPrice: parseInt(e.unitCost),
+                              unitPrice: parseInt(0),
+                              salesPrice: parseInt(0),
                               qty: parseInt(1),
-                              total: parseInt(e.unitCost),
+                              total: parseInt(0),
                               itemId: e.value,
-                              itemName: e.label.split('--')[1],
-                              remarks: remarks,
-                              itemCode: e.value,
-                              itemCodeName: e.code
+                              itemName: e.label.split('--')[1], 
+                              unit_type_id: e.unit_type_id,
                             }]) 
                           }
                 
@@ -642,12 +653,11 @@ const CreateInvoice = ({accessPermissions}) => {
                     <Table striped bordered hover>
                       <thead className='border-0' style={{backgroundColor:"#337AB7",color:"#ffffff"}}>
                         <tr className='text-center'>
-                          <th className='fw-bolder'>Item Name</th>
-                          <th className='fw-bolder'>Item Code</th>
-                          <th className='fw-bolder'>Unit Cost</th>
+                          <th className='fw-bolder'>Item Name</th> 
+                          <th className='fw-bolder'>Unit Price</th>
                           <th className='fw-bolder'>Quantity</th>
                           <th className='fw-bolder'>Total</th>
-                          {/* <th className='fw-bolder'>Remarks</th> */}
+                          <th className='fw-bolder'>Sales Price</th>
                           <th className='fw-bolder'>Action</th>
                         </tr>
                       </thead>
@@ -657,9 +667,10 @@ const CreateInvoice = ({accessPermissions}) => {
                             {item.itemId !== null && (
                               <tr className='text-center' key={index}>
                                 {/* <td>{item.id}</td> */}
-                                <td>{item.itemName}</td>
-                                <td>{item.itemCodeName}</td>
-                                <td>{item.unitPrice}</td>
+                                <td>{item.itemName}</td> 
+                                <td>
+                                  <input style={inputStyle} type="text" onChange={(e)=>handleToChangeUnitPrice(e,item)}  value={item.unitPrice} className='form-controll text-center' />
+                                </td>
                                 <td style={{width:"200px"}}>
 
                                   <div className="input-group ">
@@ -672,11 +683,11 @@ const CreateInvoice = ({accessPermissions}) => {
                                       </Button>
                                     </span>
                                     <input
+                                      
                                       typ="number"
                                       value={item.qty}
                                       className="form-control no-padding text-center"
-                                      onChange={(e)=>changeItemQty(e,index, item.id)}
-                                      
+                                      onChange={(e)=>changeItemQty(e,index, item.id)}                                      
                                     />
                                     <span className="input-group-btn">
                                       <Button
@@ -687,14 +698,16 @@ const CreateInvoice = ({accessPermissions}) => {
                                         <i className="fa fa-plus text-white" />
                                       </Button>
                                     </span>
-                                  </div>
-
-
-
+                                  </div> 
                                 </td>
                                 <td>{(item.qty * item.unitPrice).toFixed(2)}</td>
-                                {/* <td>{item.remarks}</td> */}
                                 <td>
+                                  <input style={inputStyle} type="text" onChange={(e)=>handleToChangeSalesPrice(e,item)}  value={item.salesPrice} className='form-controll text-center' />
+                                </td>
+                                <td>
+                                  <div className='d-flex justify-content-center align-items-center'>
+
+                                  
                                   <ul className="action">
                                     {/* <li>
                                       <Link href="#">
@@ -711,6 +724,7 @@ const CreateInvoice = ({accessPermissions}) => {
                                       </Link>
                                     </li>
                                   </ul>
+                                  </div>
                                 </td>
                               </tr>
                             )}

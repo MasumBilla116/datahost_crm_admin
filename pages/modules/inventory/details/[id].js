@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react'
-import { useRouter } from 'next/router';
-import DataTable, { createTheme } from 'react-data-table-component';
-import Table from 'react-bootstrap/Table';
 import moment from 'moment';
-import Axios from '../../../../utils/axios';
-import PropagateLoading from '../../../../components/PropagateLoading';
+import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react';
 import HeadSection from '../../../../components/HeadSection';
-import Breadcrumbs from '../../../../components/Breadcrumbs';
+import PropagateLoading from '../../../../components/PropagateLoading';
+import Axios from '../../../../utils/axios';
+import getStatus from '../../../../utils/getStatus';
 
 function VoucherEditHistory() {
     // Router setup
@@ -30,22 +28,22 @@ function VoucherEditHistory() {
 
         //fetching invoice items
         const getItemDetails = async () => {
-            let body = {}
-            body = {
+            let   body = {
                 action: "getItemInfo",
                 item_id: id
             }
             await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`,
                 body
             ).then(res => {
-                setItemInfo(res?.data?.data || []);
+                setItemInfo(res?.data?.data[0] || []);
                 setInitialLoading(false)
             }).catch((err) => {
                 console.log('Something went wrong !' + <br /> + err)
             });
         }
-
-        isReady && getItemDetails();
+        if(itemInfo?.length == 0){
+            isReady && getItemDetails();
+        } 
 
         return () => controller.abort();
     }, [id, isReady])
@@ -56,13 +54,14 @@ function VoucherEditHistory() {
         { text: 'All Items', link: '/modules/inventory/items' },
         { text: 'View Items', link: '/modules/inventory/items/details/[id]' },
     ]
+ 
 
     return (
         <div>
             <HeadSection title="Item-Details" />
             {/* <Breadcrumbs crumbs={breadcrumbs} currentPath={pathname} /> */}
             <div className='card shadow p-5 m-1'>
-                <h4 className='text-center my-2'>Inventory Item Details for ({itemInfo?.name})</h4>
+                <h4 className='text-center my-2'>Inventory Item Details for ({itemInfo?.item_name})</h4>
                 {initialLoading ? <div className="my-5 mx-3 text-center">
                     <PropagateLoading />
                 </div>
@@ -84,76 +83,25 @@ function VoucherEditHistory() {
                                                         <table className="table">
                                                             <tbody>
                                                                 <tr>
-                                                                    <td width={390}>Item Name</td>
-                                                                    <td>{itemInfo?.name}</td>
+                                                                    <td width={200}>Item Name</td>
+                                                                    <td >:</td>
+                                                                    <td>{itemInfo?.item_name}</td>
                                                                 </tr>
-                                                                <tr>
-                                                                    <td>Item Code</td>
-                                                                    <td>
-                                                                        {itemInfo?.code}
-                                                                    </td>
-                                                                </tr>
+                                                                
                                                                 <tr>
                                                                     <td>Inventory Category</td>
+                                                                    <td >:</td>
                                                                     <td>
-                                                                        {itemInfo?.inventory_category?.name}
+                                                                        {itemInfo?.category_name}
                                                                     </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Warehouse location name</td>
-                                                                    <td>
-                                                                        {itemInfo?.warehouse_location?.title}
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Warehouse location code</td>
-                                                                    <td>
-                                                                        {itemInfo?.warehouse_location?.location_code}
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Unit Price</td>
-                                                                    <td>
-                                                                        {itemInfo.unit_cost}
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Unit Type</td>
-                                                                    <td>
-                                                                        {itemInfo.unit_type}
-                                                                    </td>
-                                                                </tr>
+                                                                </tr>    
                                                                 <tr>
                                                                     <td>Item Type</td>
+                                                                    <td >:</td>
                                                                     <td>
-                                                                        {itemInfo.item_type}
+                                                                        {itemInfo?.item_type_name}
                                                                     </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Opening Stock</td>
-                                                                    <td>
-                                                                        {itemInfo.opening_stock}
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Total Quantity</td>
-                                                                    <td>
-                                                                        {itemInfo.qty}
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Minimum Stock</td>
-                                                                    <td>
-                                                                        {itemInfo.min_stock}
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>Description</td>
-                                                                    <td>
-                                                                        {itemInfo?.description}
-                                                                    </td>
-                                                                </tr>
-
+                                                                </tr>    
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -167,9 +115,9 @@ function VoucherEditHistory() {
                                                         <table className="table">
                                                             <tbody>
                                                                 <tr>
-                                                                    <td width={390}>Created By</td>
+                                                                    <td width={390}>Status</td>
                                                                     <td >:</td>
-                                                                    <td>{itemInfo?.creator?.name}</td>
+                                                                    <td>{ getStatus(itemInfo?.status)}</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td>Created At</td>

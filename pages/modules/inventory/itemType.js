@@ -1,17 +1,15 @@
 import MyToast from "@mdrakibul8001/toastify";
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
 import DataTable from 'react-data-table-component';
-import { HeadSection } from '../../../../components';
-import toast from "../../../../components/Toast/index";
-import DeleteIcon from '../../../../components/elements/DeleteIcon';
-import EditIcon from '../../../../components/elements/EditIcon';
-import Select from '../../../../components/elements/Select';
-import SubCategories from '../../../../components/inventory_category/SubCategories';
-import Axios from '../../../../utils/axios';
-import { getSSRProps } from "../../../../utils/getSSRProps";
+import { HeadSection } from '../../../components';
+import toast from "../../../components/Toast/index";
+import DeleteIcon from '../../../components/elements/DeleteIcon';
+import EditIcon from '../../../components/elements/EditIcon';
+import Axios from '../../../utils/axios';
+import { getSSRProps } from "../../../utils/getSSRProps";
 
 
 export const getServerSideProps = async (context) => {
@@ -39,93 +37,56 @@ const CreateForm = ({ onSubmit, loading, validated }) => {
     toast({ type, message });
   }, []);
 
-  const [category, setCategory] = useState({
+  const [itemType, setitemType] = useState({
     name: "",
-    parentId: 0,
-    description: "",
+    status: false, 
   })
 
-  const [categoryList, setCategoryList] = useState("");
+  const [itemTypeList, setitemTypeList] = useState("");
 
 
   const handleChange = (e) => {
-    setCategory(prev => ({
+    setitemType(prev => ({
       ...prev, [e.target.name]: e.target.value
     }))
   }
+  
 
-  const CategoryParentId = (Item) => {
-    setCategory(prev => ({
-      ...prev, parentId: Item
-    }))
-  }
+  const handleChangeSwitch = (e) => {
+    const { name, type, checked, value } = e.target;
+    setitemType((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value, 
+    }));
+  };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    async function categoryList() {
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, { action: "getSubCategories", })
-        .then((res) => {
-          setCategoryList(res?.data?.data);
-        });
-    }
-    categoryList()
-    return () => controller.abort();
-
-  }, [])
-
-  let dataset = { ...category, action: "createCategory" }
+  let dataset = { ...itemType, action: "createItemType" }
 
   return (
 
     <Form validated={validated}>
 
       <Form.Group controlId="formBasicEmail">
-        <Form.Label><span className="text-danger">*</span>Category Name</Form.Label>
+        <Form.Label><span className="text-danger">*</span>Item Type Name</Form.Label>
         <Form.Control
           type="text"
-          placeholder="Enter Category Name"
+          placeholder="Enter item type Name"
           name="name"
           onChange={handleChange}
         />
-      </Form.Group>
+      </Form.Group> 
 
-      <Form.Group className="mb-3" controlId="formBasicDesc" >
-        <Form.Label><span className="text-danger">*</span>Select Parent</Form.Label>
-        {loading ? (
-          <Select>
-            <option value="">loading...</option>
-          </Select>
-        ) : (
-          <Select name="parentId" onChange={handleChange}>
-            <option value="0">none</option>
-            {categoryList &&
-              categoryList?.map((cat, ind) => (
-                <React.Fragment>
-
-                  <option value={cat.id}>{cat.name}</option>
-
-                  {cat?.children_recursive?.length != 0 && (
-                    <SubCategories cat={cat} dot='----' />
-                  )}
-                </React.Fragment>
-              ))
-            }
-          </Select>
-        )}
-
-      </Form.Group>
-
-      <Form.Group controlId="formBasicDesc" className="mt-3">
-        <Form.Label>Description</Form.Label>
-
-        <Form.Control as="textarea" rows={5}
-          placeholder="Enter Description"
-          name='description'
-          onChange={handleChange}
+      <Form.Group controlId="itemTypeStatus" className="ml-2 mt-4"> 
+        <Form.Check
+            type="switch"
+            id="custom-switch"
+            label={"Enabled"} 
+            name="status"  
+            checked={itemType?.status}
+            onChange={handleChangeSwitch}  
         />
-      </Form.Group>
-
-      <Button variant="primary" className="shadow rounded mb-3" disabled={loading} style={{ marginTop: "5px" }} type="button" onClick={() => onSubmit(dataset)} block>
+      </Form.Group> 
+      <Button variant="primary" className="shadow rounded mb-3 mt-3" disabled={loading} style={{ marginTop: "5px" }} type="button" onClick={() => onSubmit(dataset)} block>
         Create
       </Button>
     </Form>
@@ -134,125 +95,61 @@ const CreateForm = ({ onSubmit, loading, validated }) => {
 
 
 //Update component
-const EditForm = ({ onSubmit, categoryId, pending, validated }) => {
+const EditForm = ({ onSubmit, pending, validated,itemType }) => {
 
   const { http } = Axios();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+ 
 
-  const [category, setCategory] = useState({
-    name: "",
-    parentId: null,
-    description: "",
-    category_id: categoryId
-  })
-
-  const [categoryList, setCategoryList] = useState("");
+  const [itemTypeObj, setitemTypeObj] = useState({
+    name: itemType?.item_type_name,  
+    status:  itemType?.status,
+    id:  itemType?.id,    
+  }) 
 
   const handleChange = (e) => {
-    setCategory(prev => ({
+    setitemTypeObj(prev => ({
       ...prev, [e.target.name]: e.target.value
     }))
-  }
+  }  
 
-  const fetchCategoryData = useCallback(async () => {
-    let isSubscribed = true;
-    setLoading(true)
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, { action: "getCategoryInfo", category_id: categoryId })
-      .then((res) => {
-        if (isSubscribed) {
-          setCategory(prev => ({
-            ...prev,
-            name: res.data.data.name,
-            parentId: res.data.data.parent_id,
-            description: res.data.data.description,
-          }));
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        console.log('Something went wrong !')
-        setLoading(false)
-      });
-
-    return () => isSubscribed = false;
-
-  }, [categoryId]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function getAllSubCategories() {
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, { action: "getSubCategories", })
-        .then((res) => {
-          setCategoryList(res?.data?.data);
-        });
-    }
-    getAllSubCategories()
-    return () => controller.abort();
-
-  }, [])
-
-  useEffect(() => {
-    fetchCategoryData();
-  }, [fetchCategoryData])
+  const handleChangeSwitch = (e) => {
+    const { name, type, checked, value } = e.target;
+    setitemTypeObj((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value, 
+    }));
+  };
 
 
-  let dataset = { ...category, action: "editCategory" }
+  let dataset = { ...itemTypeObj, action: "editItemType" }
 
   return (
 
     <Form >
 
       <Form.Group controlId="formBasicEmail">
-        <Form.Label><span className="text-danger">*</span>Category Name</Form.Label>
+        <Form.Label><span className="text-danger">*</span>Unit Type Name</Form.Label>
         <Form.Control
           type="text"
-          placeholder="Enter Category Name"
+          placeholder="Enter unit type name"
           name='name'
-          defaultValue={category.name}
+          defaultValue={itemTypeObj.name}
           onChange={handleChange}
         />
-      </Form.Group>
+      </Form.Group> 
 
-      <Form.Group className="mb-3" controlId="formBasicDesc" >
-        <Form.Label><span className="text-danger">*</span>Select Parent</Form.Label>
-        {loading ? (
-          <Select>
-            <option value="">loading...</option>
-          </Select>
-        ) : (
-          <Select name="parentId" value={category.parentId} onChange={handleChange}>
-            <option value="0">none</option>
-            {categoryList &&
-              categoryList?.map((cat, ind) => (
-                <>
-                  {cat?.children_recursive?.length != 0 ?
-                    <option disabled value={cat.id}>{cat.name}</option>
-                    :
-                    <option value={cat.id}>{cat.name}</option>
-                  }
-                  {cat?.children_recursive?.length != 0 && (
-                    <SubCategories cat={cat} dot='----' />
-                  )}
-                </>
-              ))
-            }
-          </Select>
-        )}
-
-      </Form.Group>
-
-      <Form.Group controlId="formBasicDesc" className="mt-3">
-        <Form.Label>Description</Form.Label>
-
-        <Form.Control as="textarea" rows={5}
-          placeholder="Enter Description"
-          name='description'
-          defaultValue={category.description}
-          onChange={handleChange}
+      <Form.Group controlId="itemTypeStatus" className="ml-2 mt-2 mb-2" > 
+        <Form.Check
+            type="switch"
+            id="custom-switch"
+            label={"Enabled"} 
+            name="status"  
+            checked={itemTypeObj?.status}
+            onChange={handleChangeSwitch}  
         />
-      </Form.Group>
-
+      </Form.Group> 
 
       <Button variant="primary" className="shadow rounded"
         disabled={pending || loading} style={{ marginTop: "5px" }}
@@ -265,15 +162,14 @@ const EditForm = ({ onSubmit, categoryId, pending, validated }) => {
 };
 
 //Delete component
-const DeleteComponent = ({ onSubmit, categoryId, pending }) => {
-
+const DeleteComponent = ({ onSubmit, itemTypeId, pending }) => {
+ 
+console.log("itemTypeId: ",itemTypeId)
   const { http } = Axios();
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState({
-    category_id: categoryId
-  })
+  
 
-  let dataset = { ...category, action: "deleteCategory" }
+  let dataset = { id: itemTypeId, action: "deleteItemType" }
 
   return (
     <>
@@ -296,7 +192,9 @@ export default function ListView({accessPermissions}) {
 
   const router = useRouter();
   const { pathname } = router;
-  
+  // const notify = React.useCallback((type, message) => {
+  //     toast({ type, message });
+  //   }, []);
 
   const { notify } = MyToast();
 
@@ -311,13 +209,16 @@ export default function ListView({accessPermissions}) {
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
-  //create floor form
+  //create floor form 
   const submitForm = async (items) => {
     let isSubscribed = true;
-    setLoading(true);
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, items)
+    setLoading(true);  
+    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/itemType`, items)
       .then((res) => {
         if (isSubscribed) {
+        console.log("res: ",res)
+        const resData = res?.data?.data;
+        setFilteredData(prev=>[resData,...prev]);
           notify("success", "successfully Added!");
           handleClose();
           setLoading(false);
@@ -337,8 +238,7 @@ export default function ListView({accessPermissions}) {
         setLoading(false);
         setValidated(true);
       });
-
-    fetchItemList();
+ 
 
     return () => isSubscribed = false;
   }
@@ -347,23 +247,33 @@ export default function ListView({accessPermissions}) {
   //Update Tower Modal form
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [pending, setPending] = useState(false);
-  const [categoryId, setCategoryId] = useState(null)
+  const [itemType, setItemType] = useState(null)
 
   const handleExit = () => setShowUpdateModal(false);
-  const handleOpen = (category_id) => {
+  const handleOpen = (itemType) => {
     setShowUpdateModal(true);
-    setCategoryId(category_id);
+    setItemType(itemType);
   }
 
 
   //Update floor form
-  const updateForm = async (formData) => {
+  const updateForm = async (formData) => { 
     let isSubscribed = true;
     setPending(true);
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, formData)
+    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/itemType`, formData)
       .then((res) => {
         if (isSubscribed) {
           notify("success", "successfully Updated!");
+          const resData = res?.data?.data;
+
+            const newListData = filteredData?.map((item) => {
+            if (item?.id === resData?.id) {
+                return resData; 
+            }
+            return item; 
+            });
+
+          setFilteredData(newListData);
           handleExit();
           setPending(false);
           setValidated(false);
@@ -382,30 +292,36 @@ export default function ListView({accessPermissions}) {
         }
         setPending(false);
         setValidated(true);
-      });
-
-    fetchItemList();
-
+      }); 
     return () => isSubscribed = false;
   }
 
 
   //Delete Tower Modal
+  const [itemTypeId,setItemTypeId] = useState();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const handleExitDelete = () => setShowDeleteModal(false);
-  const handleOpenDelete = (category_id) => {
+
+  const handleOpenDelete = (itemType_id) => {
     setShowDeleteModal(true);
-    setCategoryId(category_id);
+    setItemTypeId(itemType_id);
   }
 
 
   //Delete Tower form
-  const handleDelete = async (formData) => {
+  const handleDelete = async (formData) => { 
+   
     let isSubscribed = true;
     setPending(true);
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, formData)
+    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/itemType`, formData)
       .then((res) => {
         if (isSubscribed) {
+            console.log("resdata: ",res)
+            const unitId = res?.data?.data;
+            const newListData = filteredData?.filter((item) => { 
+              return item?.id !== unitId;
+            });
+            setFilteredData(newListData); 
           notify("success", "successfully deleted!");
           handleExitDelete();
           setPending(false);
@@ -416,14 +332,13 @@ export default function ListView({accessPermissions}) {
         console.log('error delete !')
         setPending(false);
       });
-
-    fetchItemList();
+ 
 
     return () => isSubscribed = false;
   }
 
   //Tower Floor Rooms data list
-  const [categoryList, setCategoryList] = useState([]);
+  const [itemTypeList, setitemTypeList] = useState([]);
   const [rows, setRows] = React.useState([]);
   const [search, setSearch] = useState("");
   const [filteredData, setFilteredData] = useState([]);
@@ -437,17 +352,17 @@ export default function ListView({accessPermissions}) {
 
 
   //Fetch List Data for datatable
-  const data = categoryList?.data;
+  const data = itemTypeList?.data;
 
   const fetchItemList = async () => {
 
     let isSubscribed = true;
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/category`, {
-      action: "getAllCategories",
+    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/itemType`, {
+      action: "getAllItemTypes",
     })
       .then((res) => { 
         if (isSubscribed) {
-          setCategoryList(res?.data);
+          setitemTypeList(res?.data);
           setFilteredData(res.data?.data);
         }
       })
@@ -471,19 +386,19 @@ export default function ListView({accessPermissions}) {
   }, [search])
 
 
-  const actionButton = (categoryId) => {
+  const actionButton = (itemType) => {
     return <>
       <ul className="action ">
         {accessPermissions.createAndUpdate &&<li>
           <Link href="#">
-            <a onClick={() => handleOpen(categoryId)}>
+            <a onClick={() => handleOpen(itemType)}>
               <EditIcon />
             </a>
           </Link>
         </li>}
        { accessPermissions.delete && <li>
           <Link href="#">
-            <a onClick={() => handleOpenDelete(categoryId)}>
+            <a onClick={() => handleOpenDelete(itemType?.id)}>
               <DeleteIcon />
             </a>
           </Link>
@@ -498,49 +413,28 @@ export default function ListView({accessPermissions}) {
   const columns = [
 
     {
-      name: 'Name',
-      selector: row => row?.name,
+      name: 'Item Type',
+      selector: row => row?.item_type_name,
       sortable: true,
     },
     {
-      name: 'Parent',
-      selector: row => row?.parent?.name || 'None',
-      sortable: true,
-    },
-    {
-      name: 'Total Items',
-      selector: row => row.items.length,
-      sortable: true,
-    },
-    {
-      name: 'Description',
-      selector: row => row.description,
-      sortable: true,
-    },
-    {
-      name: 'Created By',
-      selector: row => row.creator.name,
-      sortable: true,
-    },
+        name: 'Status',
+        selector: row => row?.status == 1 ? <span className="text-success">Active</span> : <span className="text-danger">Disable</span>,
+        sortable: true,
+      },       
     {
       name: 'Action',
-      selector: row => actionButton(row.id),
-      width: "150px",                       // added line here
+      selector: row => actionButton(row),
+      width: "150px",                        
     },
 
   ];
-
-  //breadcrumbs
-  const breadcrumbs = [
-    { text: 'Dashboard', link: '/dashboard' },
-    { text: 'All Categories', link: '/modules/inventory/categories' },
-  ]
-
+ 
   return (
 
     <>
 
-      <HeadSection title="All categories" />
+      <HeadSection title="All Item Types" />
       <div className="container-fluid">
         {/* <Breadcrumbs crumbs={breadcrumbs} currentPath={pathname} /> */}
         <div className="row">
@@ -549,7 +443,7 @@ export default function ListView({accessPermissions}) {
 
               <div className="d-flex border-bottom title-part-padding align-items-center">
                 <div>
-                  <h4 className="card-title mb-0">All Categories</h4>
+                  <h4 className="card-title mb-0"> All Item Types  </h4>
                 </div>
                 <div className="ms-auto flex-shrink-0">
                   {accessPermissions.createAndUpdate &&<Button
@@ -559,7 +453,7 @@ export default function ListView({accessPermissions}) {
                     onClick={handleShow}
                     block
                   >
-                    Add Category
+                    Add Item Type
                   </Button>}
 
 
@@ -567,7 +461,7 @@ export default function ListView({accessPermissions}) {
                   {/* Create Modal Form */}
                   <Modal dialogClassName="" show={show} onHide={handleClose}>
                     <Modal.Header closeButton>
-                      <Modal.Title>Create Category</Modal.Title>
+                      <Modal.Title>Create Item type</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                       <CreateForm onSubmit={submitForm} loading={loading} validated={validated} />
@@ -578,10 +472,10 @@ export default function ListView({accessPermissions}) {
                   {/* Update Modal Form */}
                   <Modal dialogClassName="" show={showUpdateModal} onHide={handleExit}>
                     <Modal.Header closeButton>
-                      <Modal.Title>Update Category</Modal.Title>
+                      <Modal.Title>Update Item Type</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                      <EditForm onSubmit={updateForm} categoryId={categoryId} pending={pending} validated={validated}
+                      <EditForm onSubmit={updateForm} itemType={itemType} pending={pending} validated={validated}
                       />
                     </Modal.Body>
                   </Modal>
@@ -589,7 +483,7 @@ export default function ListView({accessPermissions}) {
                   {/* Delete Modal Form */}
                   <Modal show={showDeleteModal} onHide={handleExitDelete}>
                     <Modal.Header closeButton></Modal.Header>
-                    <DeleteComponent onSubmit={handleDelete} categoryId={categoryId} pending={pending} />
+                    <DeleteComponent onSubmit={handleDelete} itemTypeId={itemTypeId}  pending={pending} />
                   </Modal>
 
                 </div>

@@ -29,6 +29,28 @@ const ML_Inventory = ({pathname}) => {
                     </a>
                 </Link>
             </li>}
+            {CheckAccessCode("m.invtr.ctgry", userId, permission) && <li className="sidebar-item">
+                <Link href="/modules/inventory/unitType">
+                    <a className={`active-${pathname === "/modules/inventory/unitType"}`} onClick={(e) => setModuleItems(e,{
+                        moduleName: "inventory",
+                        moduleUrl: "/modules/inventory/unitType"
+                    })}>
+                        <i className="mdi mdi-file-document"/>
+                        <span className="hide-menu">Manage Unit Type</span>
+                    </a>
+                </Link>
+            </li>}
+            {CheckAccessCode("m.invtr.ctgry", userId, permission) && <li className="sidebar-item">
+                <Link href="/modules/inventory/itemType">
+                    <a className={`active-${pathname === "/modules/inventory/itemType"}`} onClick={(e) => setModuleItems(e,{
+                        moduleName: "inventory",
+                        moduleUrl: "/modules/inventory/itemType"
+                    })}>
+                        <i className="mdi mdi-file-document"/>
+                        <span className="hide-menu">Manage Item Type</span>
+                    </a>
+                </Link>
+            </li>}
             {CheckAccessCode("m.invtr.itms", userId, permission) && <li className="sidebar-item">
                 <Link href="/modules/inventory/items">
                     <a className={`active-${pathname === "/modules/inventory/items"}`} onClick={(e) => setModuleItems(e,{moduleName: "inventory", moduleUrl: "/modules/inventory/items"})}>

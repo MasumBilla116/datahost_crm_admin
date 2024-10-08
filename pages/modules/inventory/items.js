@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
 import { HeadSection } from '../../../components';
-import ActiveCurrency from '../../../components/ActiveCurrency';
 import FilterDatatable from '../../../components/Filter/FilterDatatable';
 import PDFAndPrintBtn from "../../../components/Filter/PDFAndPrintBtn";
 import ServiceFilter from '../../../components/Filter/ServiceFilter';
@@ -11,11 +10,11 @@ import toast from "../../../components/Toast/index";
 import DeleteIcon from '../../../components/elements/DeleteIcon';
 import EditIcon from '../../../components/elements/EditIcon';
 import Select from '../../../components/elements/Select';
-import Select2 from "../../../components/elements/Select2";
 import ViewIcon from '../../../components/elements/ViewIcon';
 import ItemSubCat from '../../../components/inventory_category/ItemSubCat';
 import Axios from '../../../utils/axios';
 import { getSSRProps } from '../../../utils/getSSRProps';
+import getStatus from "../../../utils/getStatus";
 
 
 export const getServerSideProps = async (context) => {
@@ -44,13 +43,8 @@ const CreateForm = ({ onSubmit, loading }) => {
 
   const [item, setItem] = useState({
     name: "",
-    item_type: "",
-    description: "",
-    unit_cost: 0,
-    unit_type: "",
-    opening_stock: 0,
-    min_stock: 0,
-    warehouse: "",
+    item_type: "",  
+    unit_type: "",  
     status: 0,
   })
 
@@ -59,23 +53,10 @@ const CreateForm = ({ onSubmit, loading }) => {
   const [catLoading, setCatLoading] = useState(false)
 
   const [pending, setPending] = useState(false)
-
-  const [warehouseList, setWarehouseList] = useState("");
-  const [warehouseId, setWarehouseId] = useState();
-  const [levelList, setLevelList] = useState("");
-  const [levelNumber, setLevelNumber] = useState();
-
-  const [locationList, setLocationList] = useState("");
-  const [locationtwoList, setLocationtwoList] = useState("");
-  const [locationthreeList, setLocationthreeList] = useState("");
-  const [locationfourList, setLocationfourList] = useState("");
-  const [locationfiveList, setLocationfiveList] = useState("");
-
-  const [locationOneId, setLocationOneId] = useState();
-  const [locationTwoId, setLocationTwoId] = useState();
-  const [locationThreeId, setLocationThreeId] = useState();
-  const [locationFourId, setLocationFourId] = useState();
-  const [locationFiveId, setLocationFiveId] = useState();
+ 
+ 
+  const [allUnitTypes, setAllUnitTypes] = useState([]);
+  const [allItemTypes, setAllItemTypes] = useState([]);
 
   const [data, setData] = useState();
 
@@ -100,199 +81,65 @@ const CreateForm = ({ onSubmit, loading }) => {
           console.log('Something went wrong !')
         });
     }
+ 
 
-    const AllWarehouses = async () => {
-      setCatLoading(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/warehouse`, { action: "getAllWarehouse" })
-        .then((res) => {
-          if (isSubscribed) {
-            setWarehouseList(res.data.data);
-            setCatLoading(false)
-          }
-        })
-        .catch((err) => {
-          console.log('Something went wrong !')
-        });
-    }
+    AllParentCat();  
 
-    AllParentCat();
-    AllWarehouses();
-
-    if (warehouseId) {
-      getLocationByWarehouse()
-    }
-    if (locationOneId) {
-      getLocationByLocationOne()
-    }
-    if (locationTwoId) {
-      getLocationByLocationTwo()
-    }
-    if (locationThreeId) {
-      getLocationByLocationThree()
-    }
-    if (locationFourId) {
-      getLocationByLocationFour()
-    }
+    getAllUnitTypes();
+    getAllItemTypes();
     return () => isSubscribed = false;
 
-  }, [warehouseId, locationOneId, locationTwoId, locationThreeId, locationFourId])
+  }, [ ])
 
-  const changeWarehouse = (e) => {
-    if (e.value) {
-      setWarehouseId(e.value);
-    }
-  }
 
-  const getLocationByWarehouse = async () => {
+
+  // @@ <handler></handler>
+
+  const getAllUnitTypes = async () =>{
     let isSubscribed = true;
-    if (warehouseId !== "") {
+    if (allUnitTypes?.length  === 0 ) {
       setPending(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: warehouseId })
+      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/unitType`, { action: "getAllUnitTypes",status:1})
         .then((res) => {
           if (isSubscribed) {
-            setLocationList(res.data.data);
-            setPending(false)
+            setAllUnitTypes(res.data.data);  
           }
         });
     }
     return () => isSubscribed = false;
-  }
+  } 
 
-  const changeLocationOne = (e) => {
-    if (e.target.value) {
-      setLocationOneId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationOne = async () => {
+  
+  const getAllItemTypes = async () =>{
     let isSubscribed = true;
-    if (locationOneId !== "") {
+    if (allItemTypes?.length  === 0 ) {
       setPending(true)
-
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationOneId })
-        .then((res) => {
+      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/itemType`, { action: "getAllItemTypes",status:1})
+        .then((res) => { 
           if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationTwoId()
-              setLocationThreeId()
-              setLocationFourId()
-              setLocationFiveId()
-              setLocationtwoList("")
-              setLocationthreeList("")
-              setLocationfourList("")
-              setLocationfiveList("")
-            }
-            else {
-              setLocationtwoList(res.data.data);
-            }
-
-            setPending(false)
+            setAllItemTypes(res.data.data);  
           }
         });
     }
     return () => isSubscribed = false;
-  }
+  } 
 
-  const changeLocationTwo = (e) => {
-    if (e.target.value) {
-      setLocationTwoId(e.target.value);
-    }
-  }
+  
+  const handleChangeSwitch = (e) => {
+    const { name, type, checked, value } = e.target;
+    setItem((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value, 
+    }));
+  };
 
-  const getLocationByLocationTwo = async () => {
-    let isSubscribed = true;
-    if (locationTwoId !== "") {
-      setPending(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationTwoId })
-        .then((res) => {
-          if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationThreeId()
-              setLocationFourId()
-              setLocationFiveId()
-              setLocationthreeList("")
-              setLocationfourList("")
-              setLocationfiveList("")
-            }
-            else {
-              setLocationthreeList(res.data.data);
-            }
-            setPending(false)
-          }
-        });
-    }
-    return () => isSubscribed = false;
-  }
-
-  const changeLocationThree = (e) => {
-    if (e.target.value) {
-      setLocationThreeId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationThree = async () => {
-    let isSubscribed = true;
-    if (locationThreeId !== "") {
-      setPending(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationThreeId })
-        .then((res) => {
-          if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationFourId()
-              setLocationFiveId()
-              setLocationfourList("")
-              setLocationfiveList("")
-            }
-            else {
-              setLocationfourList(res.data.data);
-            }
-            setPending(false)
-          }
-        });
-    }
-    return () => isSubscribed = false;
-  }
-
-  const changeLocationFour = (e) => {
-    if (e.target.value) {
-      setLocationFourId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationFour = async () => {
-    let isSubscribed = true;
-    if (locationFourId !== "") {
-      setPending(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationFourId })
-        .then((res) => {
-          if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationFiveId()
-              setLocationfiveList("")
-            }
-            else {
-              setLocationfiveList(res.data.data);
-            }
-            setPending(false)
-          }
-        });
-    }
-    return () => isSubscribed = false;
-  }
-
-  const changeLocationFive = (e) => {
-    if (e.target.value) {
-      setLocationFiveId(e.target.value);
-    }
-  }
-
-  let dataset = { ...item, warehouseId, category_id, locationList, locationtwoList, locationthreeList, locationfourList, locationfiveList, locationOneId, locationTwoId, locationThreeId, locationFourId, locationFiveId, action: "createItem" }
+  let dataset = { ...item,  category_id,   action: "createItem" }
 
   return (
 
     <Form>
       <div className="row ">
-        <div className="col-md-6">
+        <div className="col-md-12">
           <Form.Group className="mb-3" controlId="formBasicName" >
             <Form.Label>Item Name<span className="text-danger">*</span></Form.Label>
             <Form.Control
@@ -301,8 +148,10 @@ const CreateForm = ({ onSubmit, loading }) => {
               name='name'
               onChange={handleChange}
             />
-          </Form.Group>
+          </Form.Group>  
+          </div> 
 
+          <div className="col-md-6"> 
           <Form.Group className="mb-3" controlId="formBasicDesc" >
             <Form.Label>Select Category<span className="text-danger">*</span></Form.Label>
             {catLoading ? (
@@ -329,216 +178,60 @@ const CreateForm = ({ onSubmit, loading }) => {
                 }
               </Select>
             )}
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="formBasicDesc" >
-            <Form.Label>Select Warehouse<span className="text-danger">*</span></Form.Label>
-            <Select2
-              options={warehouseList && warehouseList.map(({ id, name }) => ({ value: id, label: name }))}
-              onChange={changeWarehouse}
-            />
-          </Form.Group>
-
-          <div className="row">
-            <div className="col-md-12">
-              {locationList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationOneId} onChange={changeLocationOne}>
-                      <option value="">Select Location of {locationList[0]?.warehouse_level.label}</option>
-                      {locationList &&
-                        locationList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-            <div className="col-md-12">
-              {locationList && locationtwoList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationtwoList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationTwoId} onChange={changeLocationTwo}>
-                      <option value="">Select Location of {locationtwoList[0]?.warehouse_level.label}</option>
-                      {locationtwoList &&
-                        locationtwoList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-            <div className="col-md-12">
-              {locationList && locationtwoList != "" && locationthreeList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationthreeList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationThreeId} onChange={changeLocationThree}>
-                      <option value="">Select Location of {locationthreeList[0]?.warehouse_level.label}</option>
-                      {locationthreeList &&
-                        locationthreeList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-          </div>
-
-          <div className="row">
-            <div className="col-md-12">
-              {locationList && locationtwoList != "" && locationthreeList != "" && locationfourList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationfourList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationFourId} onChange={changeLocationFour}>
-                      <option value="">Select Location of {locationfourList[0]?.warehouse_level.label}</option>
-                      {locationfourList &&
-                        locationfourList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-            <div className="col-md-12">
-              {locationList && locationtwoList != "" && locationthreeList != "" && locationfourList != "" && locationfiveList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationfiveList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationFiveId} onChange={changeLocationFive}>
-                      <option value="">Select Location of {locationfourList[0]?.warehouse_level.label}</option>
-                      {locationfiveList &&
-                        locationfiveList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-          </div>
-
-          <Form.Group className="mb-3" controlId="formBasicDesc" >
-          <Form.Label>Select Item<span className="text-danger">*</span></Form.Label>
-            <Select name="item_type" onChange={handleChange}>
-              <option value="">Select Item Type</option>
-              <option value="one-time-usable">One Time Usable</option>
-              <option value="long-time-usable">Long time usable</option>
-              <option value="depreciable-item">Depreciable item</option>
-              <option value="laundry-item">Laundry item</option>
-            </Select>
-          </Form.Group>
+          </Form.Group> 
         </div>
 
 
-
-
-
-        <div className="col-md-6">
-          <Form.Group className="mb-3" controlId="formBasicName" >
-            <Form.Label>Unit Cost<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Enter Unit cost of item"
-              name='unit_cost'
-              onChange={handleChange}
-            />
-          </Form.Group>
-
+          <div className="col-md-6"> 
           <Form.Group className="mb-3" controlId="formBasicDesc" >
           <Form.Label>Unit Type<span className="text-danger">*</span></Form.Label>
             <Select name="unit_type" onChange={handleChange}>
               <option value="">Select Unit Type</option>
-              <option value="Piece">Piece</option>
-              <option value="KG">KG</option>
-              <option value="Ltr">Ltr</option>
-              <option value="gm">gm</option>
-              <option value="Meter">Meter</option>
-              <option value="Feet">Feet</option>
-              <option value="Inch">Inch</option>
-              <option value="Box">Box</option>
+              
+              {
+                allUnitTypes?.map((unit)=>{
+                  return <option value={unit?.id}>{unit?.unit_type_name}</option>
+                })
+              }
             </Select>
-          </Form.Group>
+          </Form.Group> 
+        </div> 
 
-          <Form.Group className="mb-3" controlId="formBasicName" >
-            <Form.Label>Opening Stock<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Opening Stock"
-              name='opening_stock'
-              onChange={handleChange}
-            />
-          </Form.Group>
+        
 
-          <Form.Group className="mb-3" controlId="formBasicName" >
-            <Form.Label>Minimum Stock<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Minimum Stock"
-              name='min_stock'
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-        </div>
-      </div>
-
-
-      <div className="row ">
-        <div className="col-md-10">
-
-          <Form.Group controlId="formBasicDesc" className="mt-3 mb-3">
-            <Form.Label>Item Description</Form.Label>
-
-            <Form.Control as="textarea" rows={5}
-              placeholder="Enter Item Description"
-              name='description'
-              onChange={handleChange}
-            />
-          </Form.Group>
+        <div className="col-md-6">
+        <Form.Group className="mb-3" controlId="formBasicDesc" >
+          <Form.Label>Item Type<span className="text-danger">*</span></Form.Label>
+            <Select name="item_type" onChange={handleChange}>
+              <option value="">Select Item Type</option>
+              
+              {
+                allItemTypes?.map((item)=>{
+                  return <option value={item?.id}>{item?.item_type_name}</option>
+                })
+              }
+            </Select>
+          </Form.Group> 
         </div>
 
-      </div>
+        <div className="col-md-6">
+          <Form.Group 
+            controlId="itemTypeStatus" 
+            className="ml-2 mt-4 mb-2" 
+            style={{ border: "1px solid #8080804a", padding: "10px 29px", borderRadius: "5px" }} 
+          > 
+            <Form.Check
+              type="switch"
+              id="custom-switch"
+              label="Enabled"
+              name="status"
+              onChange={handleChangeSwitch}  
+            />
+          </Form.Group> 
+        </div>
 
 
-
+      </div> 
 
 
 
@@ -551,46 +244,33 @@ const CreateForm = ({ onSubmit, loading }) => {
 
 
 //Update component
-const EditForm = ({ onSubmit, itemId, pending }) => {
+const EditForm = ({ onSubmit, itemData, pending }) => {
 
   const { http } = Axios();
 
+  console.log('itemData: ',itemData)
+
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState({
-    name: "",
-    item_type: "",
-    description: "",
-    unit_cost: "",
-    unit_type: "",
-    opening_stock: "",
-    min_stock: "",
-    status: 0,
-    item_id: itemId,
+    item_id: itemData?.item_id,
+    name: itemData?.item_name,
+    item_type_id: itemData?.item_type_id,  
+    unit_type_id: itemData?.unit_type_id,  
+    category_id : itemData?.category_id,
+    status: itemData?.status,
   })
 
   const [categories, setCategoryList] = useState("");
   const [category_id, setCategoryId] = useState();
   const [catLoading, setCatLoading] = useState(false)
 
-  const [pendingg, setPendingg] = useState(false)
+  // const [pending, setPending] = useState(false)
+ 
+ 
+  const [allUnitTypes, setAllUnitTypes] = useState([]);
+  const [allItemTypes, setAllItemTypes] = useState([]);
 
-  const [location_id, setLocationId] = useState();
-  const [locationInfo, setLocationInfo] = useState("");
-
-  const [warehouseList, setWarehouseList] = useState("");
-  const [warehouseId, setWarehouseId] = useState();
-
-  const [locationList, setLocationList] = useState("");
-  const [locationtwoList, setLocationtwoList] = useState("");
-  const [locationthreeList, setLocationthreeList] = useState("");
-  const [locationfourList, setLocationfourList] = useState("");
-  const [locationfiveList, setLocationfiveList] = useState("");
-
-  const [locationOneId, setLocationOneId] = useState();
-  const [locationTwoId, setLocationTwoId] = useState();
-  const [locationThreeId, setLocationThreeId] = useState();
-  const [locationFourId, setLocationFourId] = useState();
-  const [locationFiveId, setLocationFiveId] = useState();
+  const [data, setData] = useState();
 
   const handleChange = (e) => {
     setItem(prev => ({
@@ -598,7 +278,6 @@ const EditForm = ({ onSubmit, itemId, pending }) => {
     }))
   }
 
-  //All category data
   useEffect(() => {
     let isSubscribed = true;
     const AllParentCat = async () => {
@@ -614,554 +293,168 @@ const EditForm = ({ onSubmit, itemId, pending }) => {
           console.log('Something went wrong !')
         });
     }
+ 
 
-    const AllWarehouses = async () => {
-      setCatLoading(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/warehouse`, { action: "getAllWarehouse" })
-        .then((res) => {
-          if (isSubscribed) {
-            setWarehouseList(res.data.data);
-            setCatLoading(false)
-          }
-        })
-        .catch((err) => {
-          console.log('Something went wrong !')
-        });
-    }
+    AllParentCat();  
 
-    const getLocationInfo = async () => {
-      let isSubscribed = true;
-      if (location_id !== null) {
-        setPendingg(true)
-        await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationInfo", id: location_id })
-          .then((res) => {
-            if (isSubscribed) {
-              setWarehouseId(res.data.data.warehouse_id)
-              if (res.data.data.level_number == 1) {
-                setLocationOneId(res.data.data?.id)
-              }
-              if (res.data.data.level_number == 2) {
-                setLocationOneId(res.data.data?.parent_recursive?.id)
-                setLocationTwoId(res.data.data?.id)
-              }
-              if (res.data.data.level_number == 3) {
-                setLocationOneId(res.data.data?.parent_recursive?.parent_recursive?.id)
-                setLocationTwoId(res.data.data?.parent_recursive?.id)
-                setLocationThreeId(res.data.data?.id)
-              }
-              if (res.data.data.level_number == 4) {
-                setLocationOneId(res.data.data?.parent_recursive?.parent_recursive?.parent_recursive?.id)
-                setLocationTwoId(res.data.data?.parent_recursive?.parent_recursive?.id)
-                setLocationThreeId(res.data.data?.parent_recursive?.id)
-                setLocationFourId(res.data.data.id)
-              }
-              if (res.data.data.level_number == 5) {
-                setLocationOneId(res.data.data?.parent_recursive?.parent_recursive?.parent_recursive?.parent_recursive?.id)
-                setLocationTwoId(res.data.data?.parent_recursive?.parent_recursive?.parent_recursive?.id)
-                setLocationThreeId(res.data.data?.parent_recursive?.parent_recursive?.id)
-                setLocationFourId(res.data.data?.parent_recursive?.id)
-                setLocationFiveId(res.data.data.id)
-              }
-
-              setLocationInfo(res.data.data);
-              setPendingg(false)
-            }
-          });
-      }
-      return () => isSubscribed = false;
-    }
-
-    AllParentCat();
-    AllWarehouses();
-    // if (location_id && !warehouseId) {
-    //   getLocationInfo();
-    // }
-    // if (warehouseId) {
-    //   getLocationByWarehouse()
-    // }
-    // if (locationOneId) {
-    //   getLocationByLocationOne()
-    // }
-    // if (locationTwoId) {
-    //   getLocationByLocationTwo()
-    // }
-    // if (locationThreeId) {
-    //   getLocationByLocationThree()
-    // }
-    // if (locationFourId) {
-    //   getLocationByLocationFour()
-    // }
+    getAllUnitTypes();
+    getAllItemTypes();
     return () => isSubscribed = false;
 
-  }, [location_id, warehouseId, locationOneId, locationTwoId, locationThreeId, locationFourId])
+  }, [ ])
 
-  // const changeWarehouse = (e)=>{
-  //   if(e.value){
-  //     setWarehouseId(e.value);
-  //   }
-  // }
 
-  const getLocationByWarehouse = async () => {
+
+  // @@ <handler></handler>
+
+  const getAllUnitTypes = async () =>{
     let isSubscribed = true;
-    if (warehouseId !== "") {
-      setPendingg(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: warehouseId })
+    if (allUnitTypes?.length  === 0 ) { 
+      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/unitType`, { action: "getAllUnitTypes",status:1})
         .then((res) => {
           if (isSubscribed) {
-            setLocationList(res.data.data);
-            setPendingg(false)
+            setAllUnitTypes(res.data.data);  
           }
         });
     }
     return () => isSubscribed = false;
-  }
+  } 
 
-  const changeLocationOne = (e) => {
-    if (e.target.value) {
-      setLocationOneId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationOne = async () => {
+  
+  const getAllItemTypes = async () =>{
     let isSubscribed = true;
-    if (locationOneId !== "") {
-      setPendingg(true)
-
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationOneId })
-        .then((res) => {
+    if (allItemTypes?.length  === 0 ) { 
+      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/itemType`, { action: "getAllItemTypes",status:1})
+        .then((res) => { 
           if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationTwoId()
-              setLocationThreeId()
-              setLocationFourId()
-              setLocationFiveId()
-              setLocationtwoList("")
-              setLocationthreeList("")
-              setLocationfourList("")
-              setLocationfiveList("")
-            }
-            else {
-              setLocationtwoList(res.data.data);
-            }
-
-            setPendingg(false)
+            setAllItemTypes(res.data.data);  
           }
         });
     }
     return () => isSubscribed = false;
-  }
+  } 
 
-  const changeLocationTwo = (e) => {
-    if (e.target.value) {
-      setLocationTwoId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationTwo = async () => {
-    let isSubscribed = true;
-    if (locationTwoId !== "") {
-      setPendingg(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationTwoId })
-        .then((res) => {
-          if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationThreeId()
-              setLocationFourId()
-              setLocationFiveId()
-              setLocationthreeList("")
-              setLocationfourList("")
-              setLocationfiveList("")
-            }
-            else {
-              setLocationthreeList(res.data.data);
-            }
-            setPendingg(false)
-          }
-        });
-    }
-    return () => isSubscribed = false;
-  }
-
-  const changeLocationThree = (e) => {
-    if (e.target.value) {
-      setLocationThreeId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationThree = async () => {
-    let isSubscribed = true;
-    if (locationThreeId !== "") {
-      setPendingg(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationThreeId })
-        .then((res) => {
-          if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationFourId()
-              setLocationFiveId()
-              setLocationfourList("")
-              setLocationfiveList("")
-            }
-            else {
-              setLocationfourList(res.data.data);
-            }
-            setPendingg(false)
-          }
-        });
-    }
-    return () => isSubscribed = false;
-  }
-
-  const changeLocationFour = (e) => {
-    if (e.target.value) {
-      setLocationFourId(e.target.value);
-    }
-  }
-
-  const getLocationByLocationFour = async () => {
-    let isSubscribed = true;
-    if (locationFourId !== "") {
-      setPendingg(true)
-      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getLocationByWarehouse", id: locationFourId })
-        .then((res) => {
-          if (isSubscribed) {
-            if (res.data.data == "") {
-              setLocationFiveId()
-              setLocationfiveList("")
-            }
-            else {
-              setLocationfiveList(res.data.data);
-            }
-            setPendingg(false)
-          }
-        });
-    }
-    return () => isSubscribed = false;
-  }
-
-  const changeLocationFive = (e) => {
-    if (e.target.value) {
-      setLocationFiveId(e.target.value);
-    }
-  }
-
-  const fetchItemData = useCallback(async () => {
-    let isSubscribed = true;
-    setLoading(true)
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, { action: "getItemInfo", item_id: itemId })
-      .then((res) => {
-        if (isSubscribed) {
-          setItem(prev => ({
-            ...prev,
-            name: res.data.data.name,
-            item_type: res.data.data.item_type,
-            description: res.data.data.description,
-            unit_cost: res.data.data.unit_cost,
-            unit_type: res.data.data.unit_type,
-            opening_stock: res.data.data.opening_stock,
-            min_stock: res.data.data.min_stock,
-            warehouse: res.data.data.warehouse,
-            status: res.data.data.status,
-          }));
-          setCategoryId(res.data.data.inventory_category_id)
-          setLocationId(res.data.data.warehouse_location_id)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        console.log('Something went wrong !')
-        setLoading(false)
-      });
-
-    return () => isSubscribed = false;
-
-  }, [itemId]);
-
-  useEffect(() => {
-    fetchItemData();
-  }, [fetchItemData])
+  
+  const handleChangeSwitch = (e) => {
+    const { name, type, checked, value } = e.target;
+    setItem((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value, 
+    }));
+  };
 
 
-  let dataset = { ...item, category_id, locationList, locationtwoList, locationthreeList, locationfourList, locationfiveList, locationOneId, locationTwoId, locationThreeId, locationFourId, locationFiveId, action: "editItem" }
+
+  let dataset = { ...item,   action: "editItem" }
 
   return (
-
-    <Form >
-
-      <div className="row container">
-        <div className="col-md-6">
-          <Form.Group controlId="formBasicName" className="mb-3">
-            <Form.Label>Item Name<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter Item Name"
-              defaultValue={item.name}
-              name="name"
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="formBasicDesc" >
-            <Form.Label>Select Category<span className="text-danger">*</span></Form.Label>
-            {catLoading ? (
-              <Select>
-                <option value="">loading...</option>
-              </Select>
-            ) : (
-              <Select value={category_id} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">Select Category</option>
-                {categories &&
-                  categories?.map((cat, ind) => (
-                    <>
-                      {cat?.children_recursive?.length != 0 ?
-                        <option disabled value={cat.id}>{cat.name}</option>
-                        :
-                        <option value={cat.id}>{cat.name}</option>
-                      }
-
-                      {cat?.children_recursive?.length != 0 && (
-                        <ItemSubCat cat={cat} dot='----' />
-                      )}
-                    </>
-                  ))
-                }
-              </Select>
-            )}
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="formBasicDesc" >
-            <Form.Label>Select Warehouse<span className="text-danger">*</span></Form.Label>
-            {catLoading ? (
-              <Select>
-                <option value="">loading...</option>
-              </Select>
-            ) : (
-              <Select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
-                <option value="">Select Warehouse</option>
-                {warehouseList &&
-                  warehouseList?.map((warehouse, ind) => (
-                    <>
-                      <option value={warehouse.id}>{warehouse.name}</option>
-                    </>
-                  ))
-                }
-              </Select>
-            )}
-          </Form.Group>
-
-          <div className="row">
-            <div className="col-md-4">
-              {locationList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationOneId} onChange={changeLocationOne}>
-                      <option value="">Select Location of {locationList[0]?.warehouse_level.label}</option>
-                      {locationList &&
-                        locationList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-            <div className="col-md-4">
-              {locationList && locationtwoList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationtwoList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationTwoId} onChange={changeLocationTwo}>
-                      <option value="">Select Location of {locationtwoList[0]?.warehouse_level.label}</option>
-                      {locationtwoList &&
-                        locationtwoList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-            <div className="col-md-4">
-              {locationList && locationtwoList != "" && locationthreeList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationthreeList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationThreeId} onChange={changeLocationThree}>
-                      <option value="">Select Location of {locationthreeList[0]?.warehouse_level.label}</option>
-                      {locationthreeList &&
-                        locationthreeList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-          </div>
-
-          <div className="row">
-            <div className="col-md-6">
-              {locationList && locationtwoList != "" && locationthreeList != "" && locationfourList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationfourList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationFourId} onChange={changeLocationFour}>
-                      <option value="">Select Location of {locationfourList[0]?.warehouse_level.label}</option>
-                      {locationfourList &&
-                        locationfourList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-            <div className="col-md-6">
-              {locationList && locationtwoList != "" && locationthreeList != "" && locationfourList != "" && locationfiveList != "" &&
-                <Form.Group className="mb-3" controlId="formBasicDesc" >
-                  <Form.Label>Select Location of {locationfiveList[0]?.warehouse_level.label}<span className="text-danger">*</span></Form.Label>
-                  {pending ? (
-                    <Select>
-                      <option value="">loading...</option>
-                    </Select>
-                  ) : (
-                    <Select value={locationFiveId} onChange={changeLocationFive}>
-                      <option value="">Select Location of {locationfourList[0]?.warehouse_level.label}</option>
-                      {locationfiveList &&
-                        locationfiveList?.map((level, ind) => (
-                          <>
-                            <option value={level.id}>{level.title}</option>
-                          </>
-                        ))
-                      }
-                    </Select>
-                  )}
-                </Form.Group>}
-            </div>
-          </div>
-
-          <Form.Group className="mb-3" controlId="formBasicDesc" >
-          <Form.Label>Select Item<span className="text-danger">*</span></Form.Label>
-            <Select value={item.item_type} name="item_type" onChange={handleChange}>
-              <option value="">Select Item Type</option>
-              <option value="one-time-usable">One Time Usable</option>
-              <option value="long-time-usable">Long time usable</option>
-              <option value="depreciable-item">Depreciable item</option>
-              <option value="laundry-item">Laundry item</option>
-            </Select>
-          </Form.Group>
-
-        </div>
-
-
-
-
-        <div className="col-md-6">
-          <Form.Group className="mb-3" controlId="formBasicName" >
-            <Form.Label>Unit Cost<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="number"
-              defaultValue={item.unit_cost}
-              placeholder="Enter Unit cost of item"
-              name='unit_cost'
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="formBasicDesc" >
-          <Form.Label>Unit Type<span className="text-danger">*</span></Form.Label>
-            <Select value={item.unit_type} name="unit_type" onChange={handleChange}>
-              <option value="">Select Unit Type</option>
-              <option value="Piece">Piece</option>
-              <option value="KG">KG</option>
-              <option value="Ltr">Ltr</option>
-              <option value="gm">gm</option>
-              <option value="Meter">Meter</option>
-              <option value="Feet">Feet</option>
-              <option value="Inch">Inch</option>
-              <option value="Box">Box</option>
-            </Select>
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="formBasicName" >
-            <Form.Label>Opening Stock<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="number"
-              defaultValue={item.opening_stock}
-              placeholder="Opening Stock"
-              name='opening_stock'
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3" controlId="formBasicName" >
-            <Form.Label>Minimum Stock<span className="text-danger">*</span></Form.Label>
-            <Form.Control
-              type="number"
-              defaultValue={item.min_stock}
-              placeholder="Minimum Stock"
-              name='min_stock'
-              onChange={handleChange}
-            />
-          </Form.Group>
-        </div>
-
-
-      </div>
-
-      <div className="row container">
-
-        <Form.Group controlId="formBasicDesc" className="mt-3 mb-4">
-          <Form.Label>Item Description</Form.Label>
-
-          <Form.Control as="textarea" rows={5}
-            placeholder="Enter Item Description"
-            defaultValue={item.description}
-            name='description'
+    <Form>
+    <div className="row ">
+      <div className="col-md-12">
+        <Form.Group className="mb-3" controlId="formBasicName" >
+          <Form.Label>Item Name<span className="text-danger">*</span></Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter Item Name"
+            name='name'
+            defaultValue={item?.name}
             onChange={handleChange}
           />
-        </Form.Group>
+        </Form.Group>  
+        </div> 
+
+        <div className="col-md-6"> 
+        <Form.Group className="mb-3" controlId="formBasicDesc" >
+          <Form.Label>Select Category<span className="text-danger">*</span></Form.Label>
+          {catLoading ? (
+            <Select>
+              <option value="">loading...</option>
+            </Select>
+          ) : (
+            <Select value={item?.category_id} name="category_id" onChange={(e) => setItem(prev=>({...prev, category_id: e.target.value}))}>
+              <option value="">Select Category</option>
+              {categories &&
+                categories?.map((cat, ind) => (
+                  <>
+                    {cat?.children_recursive?.length != 0 ?
+                      <option disabled value={cat.id}>{cat.name}</option>
+                      :
+                      <option value={cat.id} >{cat.name}</option>
+                    }
+
+                    {cat?.children_recursive?.length != 0 && (
+                      <ItemSubCat cat={cat} dot='----' />
+                    )}
+                  </>
+                ))
+              }
+            </Select>
+          )}
+        </Form.Group> 
+      </div>
+
+      <div className="col-md-6"> 
+          <Form.Group className="mb-3" controlId="formBasicDesc" >
+          <Form.Label>Unit Type<span className="text-danger">*</span></Form.Label>
+            <Select value={item?.unit_type_id} name="unit_type_id" onChange={handleChange}>
+              <option value="">Select Unit Type</option>
+              
+              {
+                allUnitTypes?.map((unit)=>{
+                  return <option value={unit?.id}>{unit?.unit_type_name}</option>
+                })
+              }
+            </Select>
+          </Form.Group> 
+        </div>
+  
+      <div className="col-md-6">
+      <Form.Group className="mb-3" controlId="formBasicDesc" >
+        <Form.Label>Item Type<span className="text-danger">*</span></Form.Label>
+          <Select value={item?.item_type_id} name="item_type_id" onChange={handleChange}>
+            <option value="">Select Item Type</option>
+            
+            {
+              allItemTypes?.map((itemRow)=>{
+                return <option value={itemRow?.id}  >{itemRow?.item_type_name}</option>
+              })
+            }
+          </Select>
+        </Form.Group> 
+      </div>
+
+      <div className="col-md-6">
+        <Form.Group 
+          controlId="itemTypeStatus" 
+          className="ml-2 mt-4 mb-2" 
+          style={{ border: "1px solid #8080804a", padding: "10px 29px", borderRadius: "5px" }} 
+        > 
+          <Form.Check
+            type="switch"
+            id="custom-switch"
+            label="Enabled"
+            name="status"
+            checked={item?.status}
+            onChange={handleChangeSwitch}  
+          />
+        </Form.Group> 
       </div>
 
 
+    </div> 
 
-      <Button variant="primary" className="shadow rounded"
-        disabled={pending || loading} style={{ marginTop: "5px" }}
-        onClick={() => onSubmit(dataset)}
-      >
-        {pending ? 'updating...' : 'update'}
-      </Button>
-    </Form>
+
+
+    <Button variant="primary" className="shadow rounded mb-3" style={{ marginTop: "5px" }} type="button" onClick={() => onSubmit(dataset)} block>
+      Create
+    </Button>
+  </Form>
   );
 };
 
 //Delete component
 const DeleteComponent = ({ onSubmit, itemId, pending }) => {
-
+console.log("itemId: ",itemId)
   const { http } = Axios();
 
   const [loading, setLoading] = useState(true);
@@ -1205,11 +498,12 @@ export default function ListView({accessPermissions}) {
   const handleShow = () => setShow(true);
 
   //create floor form
-  const submitForm = async (items) => {
+  const submitForm = async (items) => { 
     let isSubscribed = true;
     setLoading(true);
     await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, items)
       .then((res) => {
+        console.log("res: ",res)
         if (isSubscribed) {
           notify("success", "successfully Added!");
           handleClose();
@@ -1233,31 +527,13 @@ export default function ListView({accessPermissions}) {
           }
           if (msg?.category_id) {
             notify("error", `${msg.category_id.Category_id}`);
-          }
-          if (msg?.unit_cost) {
-            notify("error", `${msg.unit_cost.Unit_cost}`);
-          }
+          } 
           if (msg?.unit_type) {
             notify("error", `${msg.unit_type.Unit_type}`);
           }
           if (msg?.item_type) {
             notify("error", `${msg.item_type.Item_type}`);
-          }
-          if (msg?.locationOneId) {
-            notify("error", `${msg.locationOneId.LocationOneId}`);
-          }
-          if (msg?.locationTwoId) {
-            notify("error", `${msg.locationTwoId.LocationTwoId}`);
-          }
-          if (msg?.locationThreeId) {
-            notify("error", `${msg.locationThreeId.LocationThreeId}`);
-          }
-          if (msg?.locationFourId) {
-            notify("error", `${msg.locationFourId.LocationFourId}`);
-          }
-          if (msg?.locationFiveId) {
-            notify("error", `${msg.locationFiveId.LocationFiveId}`);
-          }
+          } 
 
         }
         setLoading(false);
@@ -1274,18 +550,19 @@ export default function ListView({accessPermissions}) {
   //Update Tower Modal form
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [pending, setPending] = useState(false);
-  const [itemId, setItemId] = useState(null)
+  const [itemUpdateData, setItemUpdateData] = useState(null)
 
   const handleExit = () => setShowUpdateModal(false);
-  const handleOpen = (item_id) => {
+  const handleOpen = (item) => {
     setShowUpdateModal(true);
-    setItemId(item_id);
+    setItemUpdateData(item);
   }
 
 
   //Update floor form
   const updateForm = async (formData) => {
-    
+
+  
     let isSubscribed = true;
     setPending(true);
     await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/inventory/items`, formData)
@@ -1338,13 +615,14 @@ export default function ListView({accessPermissions}) {
   //Delete Tower Modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [status, setStatus] = useState(null);
+  const [itemId,setItemId] = useState(null);
 
   
   const handleExitDelete = () => setShowDeleteModal(false);
-  const handleOpenDelete = (row) => {
-    setShowDeleteModal(true);
-    setItemId(row.id);
-    setStatus(row.status);
+  const handleOpenDelete = (row) => { 
+    console.log('row: ',row)
+    setItemId(row?.item_id)
+    setShowDeleteModal(true);  
   }
 
 
@@ -1361,7 +639,7 @@ export default function ListView({accessPermissions}) {
           setFilterValue(prev=>({
             ...prev,
             filter: true
-          }))
+          })) 
         }
 
       })
@@ -1470,11 +748,11 @@ export default function ListView({accessPermissions}) {
 
 
 
-  const actionButton = (row) => {
+  const actionButton = (row) => { 
     return <>
       <ul className="action ">
        { accessPermissions.listAndDetails &&<li>
-          <Link href={`/modules/inventory/details/${row.id}`}>
+          <Link href={`/modules/inventory/details/${row.item_id}`}>
             <a>
               <ViewIcon />
             </a>
@@ -1483,7 +761,7 @@ export default function ListView({accessPermissions}) {
         </li>}
         {accessPermissions.createAndUpdate &&<li>
           <Link href="#">
-            <a onClick={() => handleOpen(row.id)}>
+            <a onClick={() => handleOpen(row)}>
               <EditIcon />
             </a>
           </Link>
@@ -1506,28 +784,28 @@ export default function ListView({accessPermissions}) {
   const columns = [
 
     {
-      name: 'Name',
-      selector: row => row.name,
-      sortable: true,
-    },
-    {
-      name: 'Item Code',
-      selector: row => row.code,
+      name: 'Item Name',
+      selector: row => row.item_name,
       sortable: true,
     },
     {
       name: 'Category',
-      selector: row => row.name,
+      selector: row => row.category_name,
       sortable: true,
     },
     {
-      name: 'Unit Cost',
-      selector: row => <> <ActiveCurrency/> { row.unit_cost }</>,
+      name: 'Unit Type',
+      selector: row => row.unit_type_name	,
       sortable: true,
     },
     {
-      name: 'Quantity',
-      selector: row => row.qty,
+      name: 'Item Type',
+      selector: row => row.item_type_name	,
+      sortable: true,
+    },
+    {
+      name: 'Status',
+      selector: row => getStatus(row.status),
       sortable: true,
     },
     {
@@ -1582,7 +860,7 @@ export default function ListView({accessPermissions}) {
 
 
                   {/* Create Modal Form */}
-                  <Modal dialogClassName="modal-lg" show={show} onHide={handleClose}>
+                  <Modal  show={show} onHide={handleClose}>
                     <Modal.Header closeButton>
                       <Modal.Title>Create Item</Modal.Title>
                     </Modal.Header>
@@ -1593,12 +871,12 @@ export default function ListView({accessPermissions}) {
                   {/* End Create Modal Form */}
 
                   {/* Update Modal Form */}
-                  <Modal dialogClassName="modal-lg" show={showUpdateModal} onHide={handleExit}>
+                  <Modal   show={showUpdateModal} onHide={handleExit}>
                     <Modal.Header closeButton>
                       <Modal.Title>Update Item</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                      <EditForm onSubmit={updateForm} itemId={itemId} pending={pending}
+                      <EditForm onSubmit={updateForm} itemData={itemUpdateData} pending={pending}
                       />
                     </Modal.Body>
                   </Modal>
