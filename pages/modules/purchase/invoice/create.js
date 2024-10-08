@@ -94,6 +94,7 @@ const CreateInvoice = ({accessPermissions}) => {
 
 
   const [invoice, setInvoice] = useState([]);
+  const [paymentTypeId,setPaymentTypeId] = useState("");
   const [ind, setInd] = useState(1)
 
   const reset = () => {
@@ -127,6 +128,7 @@ const CreateInvoice = ({accessPermissions}) => {
       unitTypeId: "",
       itemName: itemName, 
       salesPrice: parseInt(0),
+      payment_type_id: "",
     }
     ])
     reset()
@@ -141,6 +143,7 @@ const CreateInvoice = ({accessPermissions}) => {
   const selected_code_options = { value: itemCode, label: itemCodeName };
   const [selected_item_options, setSelected_item_options] = useState({ value: itemId, label: itemName });
   const [pending, setPending] = useState(true);
+  const [allPaymentMethods,setAllPaymentMethods] = useState([]);
 
   const [tempTotal, setTempTotal] = useState(0);
 
@@ -278,10 +281,44 @@ const CreateInvoice = ({accessPermissions}) => {
       setItemCodeName(e.label)
     }
   }
-  async function submitForm(e) { 
-    e.preventDefault();  
 
-    if (supplierName && SupplierInvoiceNumber) {
+  // handle to submit form
+  async function submitForm(e) { 
+    
+    e.preventDefault();   
+    var formError = false;
+    var message = "";
+    const invoiceItemValidation = invoice?.some(item=>((item?.unitPrice ==0) || (item?.salesPrice == 0)));
+    const salePriceValidation = invoice?.some(item=>(  (item?.salesPrice  <= item?.unitPrice)));
+
+
+    console.log('supplierName: ',supplierName)
+    console.log('SupplierInvoiceNumber: ',SupplierInvoiceNumber)
+
+
+    if(invoiceItemValidation){
+      message = "Unit/Sale price must not be empty"; 
+      formError = true;
+    }
+    else if(salePriceValidation){
+      message = "Sale price must not be grater than unit price"; 
+      formError = true;
+    }
+    else if (supplierName == "" && SupplierInvoiceNumber=="") {
+      message =  "fields must not be empty";
+      formError = true;
+    }
+    else if(paymentTypeId === ""){
+      message =  "Payment type is requierd";
+      formError = true;
+    }
+
+    if(formError){
+      notify("error",message);
+      return;
+    }
+
+    try{      
       setLoading(true)
       let body = {
         action: "purchase",
@@ -292,9 +329,11 @@ const CreateInvoice = ({accessPermissions}) => {
         inv_id: SupplierInvoiceNumber,
         inv_date: date,
         supplierID: supplierID,
-        supplierName: supplierName
+        supplierName: supplierName,
+        payment_type_id: paymentTypeId,
       }
 
+       
       await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`, body)
         .then((res) => {
           setLoading(false)
@@ -302,10 +341,12 @@ const CreateInvoice = ({accessPermissions}) => {
           router.push(`/modules/purchase/invoice`)
         })
       setGrandTotal(0)
-    }
-    else {
-      notify("error", "fields must not be empty");
-    }
+    }catch (error) {
+      notify("error", "Failed to add purchase. Please try again.");
+    } finally {
+        setLoading(false);
+        setGrandTotal(0);
+    }    
   }
 
   const handleTotal = (e) => {
@@ -439,6 +480,7 @@ const CreateInvoice = ({accessPermissions}) => {
     getAllItems();
     categoryList()
     getItemByCode()
+    fetchPaymentMethods();
 
     return () => controller.abort();
 
@@ -513,6 +555,26 @@ const CreateInvoice = ({accessPermissions}) => {
     setInvoice(updateUnitPriceInvoice);
     
   }
+ 
+
+  // @@ fetch  payment method
+  const fetchPaymentMethods =  async () =>{
+
+    if(allPaymentMethods?.length === 0){
+      const body = {
+        action: "getAllPaymentTypes"
+      };  
+      await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`,body)
+      .then(res=>{
+        setAllPaymentMethods(res?.data?.data);
+      })
+      .catch(error=>{
+  
+      })
+    }   
+
+  }
+
 
 
   const inputStyle = {border: "1px solid #8a847b33", width: "107px", borderRadius: "5px",color:"#484848"};
@@ -606,11 +668,11 @@ const CreateInvoice = ({accessPermissions}) => {
                       </div>  
                     </div> 
                     
-                  <div className="d-flex justify-content-end align-items-end">
+                  {/* <div className="d-flex justify-content-end align-items-end">
                       <p className=''>
                       {localInv}
                     </p> 
-                  </div>
+                  </div> */}
 
 
 
@@ -655,9 +717,9 @@ const CreateInvoice = ({accessPermissions}) => {
                         <tr className='text-center'>
                           <th className='fw-bolder'>Item Name</th> 
                           <th className='fw-bolder'>Unit Price</th>
+                          <th className='fw-bolder'>Sale Price</th>
                           <th className='fw-bolder'>Quantity</th>
-                          <th className='fw-bolder'>Total</th>
-                          <th className='fw-bolder'>Sales Price</th>
+                          <th className='fw-bolder'>Total</th>                          
                           <th className='fw-bolder'>Action</th>
                         </tr>
                       </thead>
@@ -671,8 +733,10 @@ const CreateInvoice = ({accessPermissions}) => {
                                 <td>
                                   <input style={inputStyle} type="text" onChange={(e)=>handleToChangeUnitPrice(e,item)}  value={item.unitPrice} className='form-controll text-center' />
                                 </td>
+                                <td>
+                                  <input style={inputStyle} type="text" onChange={(e)=>handleToChangeSalesPrice(e,item)}  value={item.salesPrice} className='form-controll text-center' />
+                                </td>
                                 <td style={{width:"200px"}}>
-
                                   <div className="input-group ">
                                     <span className="input-group-btn">
                                       <Button 
@@ -701,9 +765,7 @@ const CreateInvoice = ({accessPermissions}) => {
                                   </div> 
                                 </td>
                                 <td>{(item.qty * item.unitPrice).toFixed(2)}</td>
-                                <td>
-                                  <input style={inputStyle} type="text" onChange={(e)=>handleToChangeSalesPrice(e,item)}  value={item.salesPrice} className='form-controll text-center' />
-                                </td>
+                               
                                 <td>
                                   <div className='d-flex justify-content-center align-items-center'>
 
@@ -746,7 +808,23 @@ const CreateInvoice = ({accessPermissions}) => {
                             
                           />
                         </Form.Group>
+
+                        <div className="col-md-4">
+                    <Form.Group>
+                      <Form.Label>Payment Type <span className='text-danger'>*</span></Form.Label>
+                      <Select2
+                        // className="select-bg"
+                        options={allPaymentMethods?.map(({ id,type }) => ({ value: id, payment_type:type,  label:`${type}`}))}
+                         
+                        onChange={(e) => {    
+                          setPaymentTypeId(e.value)  
+                        }}
+                      />
+                    </Form.Group>
+                  </div> 
+
                       </div>
+                      
 
                     {!!grandTotal && <div className='text-end fw-bold mb-3 me-2'>Total Amount: <span>{grandTotal && Number(grandTotal).toFixed(2)}</span></div>}
                         <div className="text-end">

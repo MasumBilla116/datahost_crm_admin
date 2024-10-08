@@ -268,7 +268,7 @@ const EditForm = ({ onSubmit, itemData, pending }) => {
  
  
   const [allUnitTypes, setAllUnitTypes] = useState([]);
-  const [allItemTypes, setAllItemTypes] = useState([]);
+  const [allItemTypes, setAllItemTypes] = useState([]); 
 
   const [data, setData] = useState();
 
@@ -298,7 +298,7 @@ const EditForm = ({ onSubmit, itemData, pending }) => {
     AllParentCat();  
 
     getAllUnitTypes();
-    getAllItemTypes();
+    getAllItemTypes(); 
     return () => isSubscribed = false;
 
   }, [ ])
@@ -342,6 +342,7 @@ const EditForm = ({ onSubmit, itemData, pending }) => {
       [name]: type === "checkbox" ? checked : value, 
     }));
   };
+
 
 
 

@@ -27,20 +27,19 @@ import FilterDatatable from "../../../../components/Filter/FilterDatatable";
 import ServiceFilter from "../../../../components/Filter/ServiceFilter";
 import PdfDataTable from "../../../../components/PdfDataTable";
 import PrintDataTable from "../../../../components/PrintDataTable";
-import PDFAndPrintBtn from "./../../../../components/Filter/PDFAndPrintBtn";
 import { getSSRProps } from "../../../../utils/getSSRProps";
+import PDFAndPrintBtn from "./../../../../components/Filter/PDFAndPrintBtn";
 
 export const getServerSideProps = async (context) => {
-  const {
-    permission,
-    query,
-    accessPermissions
-  } = await getSSRProps({ context: context, access_code: "m.prchs.mng_invc" });
+  const { permission, query, accessPermissions } = await getSSRProps({
+    context: context,
+    access_code: "m.prchs.mng_invc",
+  });
   return {
     props: {
       permission,
       query,
-      accessPermissions
+      accessPermissions,
     },
   };
 };
@@ -118,7 +117,7 @@ const CreateForm = ({ onSubmit, loading }) => {
   const [startDate, setStartDate] = useState(new Date());
   const [date, setDate] = useState(new Date());
 
-  const handleDateChange = () => { };
+  const handleDateChange = () => {};
 
   let dataset = { ...tower, action: "createTower" };
 
@@ -788,10 +787,10 @@ export default function ListView({ accessPermissions }) {
           notify("success", "successfully deleted!");
           handleExitDelete();
           setPending(false);
-          setFilterValue((prev)=>({
+          setFilterValue((prev) => ({
             ...prev,
-            filter:true
-        }))
+            filter: true,
+          }));
         }
       })
       .catch((e) => {
@@ -803,8 +802,6 @@ export default function ListView({ accessPermissions }) {
 
     return () => (isSubscribed = false);
   };
-
-
 
   // for data table chagne
   const handleChangeFilter = (e) => {
@@ -846,19 +843,18 @@ export default function ListView({ accessPermissions }) {
     if (!filteredData?.[currentPage] || filterValue.filter === true) {
       await http
         .post(
-          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/invoice?page=${currentPage}&perPageShow=${perPageShow}`,
+          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product?page=${currentPage}&perPageShow=${perPageShow}`,
           {
-            action: "getAllSupplierInvoiceList",
+            action: "getPurchaseInvoiceList",
             filterValue: filterValue,
           }
         )
         .then((res) => {
           if (isSubscribed) {
-            setItemList(res?.data);
-            // setFilteredData(res.data?.data);
+            setItemList(res?.data?.data);
             setFilteredData((prev) => ({
               ...prev,
-              total: res.data?.data?.total || prev?.total,
+              total: 10,
               paginate: true,
               [currentPage]: res?.data?.data[currentPage],
             }));
@@ -905,7 +901,7 @@ export default function ListView({ accessPermissions }) {
     }
   };
 
-  const handlePdf = () => { };
+  const handlePdf = () => {};
   const [isOpen, setIsopen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState("");
 
@@ -913,30 +909,35 @@ export default function ListView({ accessPermissions }) {
     return (
       <>
         <ul className="action">
-          {accessPermissions.listAndDetails && <li>
-            <Link href={`/modules/purchase/invoice/details/${supplier_Id}`}>
-              <a>
-                <ViewIcon />
-              </a>
-            </Link>
-          </li>}
-          {accessPermissions.createAndUpdate && <li>
-            <Link href={`/modules/purchase/invoice/update/${supplier_Id}`}>
-              <a>
-                <EditIcon />
-              </a>
-            </Link>
-          </li>}
+          {accessPermissions.listAndDetails && (
+            <li>
+              <Link href={`/modules/purchase/invoice/details/${supplier_Id}`}>
+                <a>
+                  <ViewIcon />
+                </a>
+              </Link>
+            </li>
+          )}
+          {accessPermissions.createAndUpdate && (
+            <li>
+              <Link href={`/modules/purchase/invoice/update/${supplier_Id}`}>
+                <a>
+                  <EditIcon />
+                </a>
+              </Link>
+            </li>
+          )}
           {status === 1 && (
             <>
-
-              {accessPermissions.delete && <li>
-                <Link href="#">
-                  <a onClick={() => handleOpenDelete(supplier_Id)}>
-                    <DeleteIcon />
-                  </a>
-                </Link>
-              </li>}
+              {accessPermissions.delete && (
+                <li>
+                  <Link href="#">
+                    <a onClick={() => handleOpenDelete(supplier_Id)}>
+                      <DeleteIcon />
+                    </a>
+                  </Link>
+                </li>
+              )}
             </>
           )}
         </ul>
@@ -944,52 +945,43 @@ export default function ListView({ accessPermissions }) {
     );
   };
 
+  console.log("filteredData: ", filteredData);
+
   const columns = [
     {
       name: "Supplier Name",
-      selector: (row) => row.name,
+      selector: (row) => row?.name,
       // width: "15%",
       sortable: true,
     },
     {
-      name: "Local Invoice",
-      selector: (row) => row.local_invoice,
+      name: "Invoice",
+      selector: (row) => row?.purchase_invoice,
       // width: "15%",
       sortable: true,
     },
     {
-      name: "Supplier Invoice",
-      selector: (row) => row.supplier_invoice,
+      name: "Total Qty",
+      selector: (row) => row.quantity,
       // width: "15%",
       sortable: true,
     },
-    // {
-    //   name: <span className="fw-bold ">Total Item</span>,
-    //   selector: (row) => row.total_item,
-    //   width: "10%",
-    //   sortable: true,
-    // },
-    // {
-    //   name: "Total Item Quantity",
-    //   selector: (row) => row.total_item_qty,
-    //   // width: "10%",
-    //   sortable: true,
-    // },
-    // {
-    //   name: "Total amount",
-    //   selector: (row) => row.total_amount,
-    //   // width: "10%",
-    //   sortable: true,
-    // },
+    {
+      name: "Total Price",
+      selector: (row) => row.total_price,
+      // width: "15%",
+      sortable: true,
+    },
+
     {
       name: "Created At",
-      selector: (row) => moment(row.created_at).format("DD/MM/YYYY"),
+      selector: (row) => moment(row.purchase_date).format("DD/MM/YYYY"),
       // width: "10%",
       sortable: true,
     },
     {
       name: "Action",
-      selector: (row) => actionButton(row.id, row.status),
+      selector: (row) => actionButton(row?.id, row?.status),
       // width: "10%",
     },
   ];
@@ -1075,13 +1067,15 @@ export default function ListView({ accessPermissions }) {
               <div className="card-body">
                 <div className="">
                   <div className="custom-data-table position-relative">
-                   { accessPermissions.download && <PDFAndPrintBtn
-                      currentPage={currentPage}
-                      rowsPerPage={perPageShow}
-                      data={filteredData[currentPage]}
-                      columns={columns}
-                      position={true}
-                    />}
+                    {accessPermissions.download && (
+                      <PDFAndPrintBtn
+                        currentPage={currentPage}
+                        rowsPerPage={perPageShow}
+                        data={filteredData[currentPage]}
+                        columns={columns}
+                        position={true}
+                      />
+                    )}
                     <ServiceFilter
                       statusList={dynamicStatusList}
                       filterValue={filterValue}
