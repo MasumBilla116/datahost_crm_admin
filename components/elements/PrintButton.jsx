@@ -1,7 +1,6 @@
-    import React from 'react';
-    import { FaFilePdf } from 'react-icons/fa';
     import Button from '@mui/material/Button';
-    const PrintButton = ({ contentId }) => {
+import { FaFilePdf } from 'react-icons/fa';
+    const PrintButton = ({ contentId, title='' }) => {
     const handlePrint = () => {
         const printContent = document.getElementById(contentId);
         if (printContent) {
@@ -16,7 +15,7 @@
 
     return (
         // <button onClick={handlePrint}>Print</button>
-        <Button variant='contained' color='success' onClick={handlePrint} ><span className='fs-5 me-1'><FaFilePdf /></span>Print Invoice</Button>
+        <Button variant='contained' color='success' onClick={handlePrint} ><span className='fs-5 me-1'><FaFilePdf /></span> {title !== "" ? title : "Print Invoice"}</Button>
 
     );
     };

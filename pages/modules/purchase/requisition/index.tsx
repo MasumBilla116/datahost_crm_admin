@@ -1,5 +1,3 @@
-import * as moment from "moment";
-
 // import { Container, Button as FButton } from 'react-floating-action-button'
 import Link from "next/link";
 import React, { useCallback, useEffect, useState } from "react";
@@ -24,11 +22,11 @@ import Axios from "../../../../utils/axios";
 
 import { useRouter } from "next/router";
 import FilterDatatable from "../../../../components/Filter/FilterDatatable";
+import PDFAndPrintBtn from "../../../../components/Filter/PDFAndPrintBtn";
 import ServiceFilter from "../../../../components/Filter/ServiceFilter";
 import PdfDataTable from "../../../../components/PdfDataTable";
 import PrintDataTable from "../../../../components/PrintDataTable";
 import { getSSRProps } from "../../../../utils/getSSRProps";
-import PDFAndPrintBtn from "./../../../../components/Filter/PDFAndPrintBtn";
 
 export const getServerSideProps = async (context) => {
   const { permission, query, accessPermissions } = await getSSRProps({
@@ -831,7 +829,7 @@ export default function ListView({ accessPermissions }) {
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
-      fetchItemList();
+      fetchPurchaseRequisitionList();
     });
     return () => clearTimeout(timeout);
   }, [filterValue, startDate, endDate]);
@@ -839,7 +837,7 @@ export default function ListView({ accessPermissions }) {
   //Fetch List Data for datatable
   const data = itemList?.data;
 
-  const fetchItemList = async () => {
+  const fetchPurchaseRequisitionList = async () => {
     let isSubscribed = true;
     setTblLoader(true);
     // setTimeout(async () => {
@@ -848,7 +846,7 @@ export default function ListView({ accessPermissions }) {
         .post(
           `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product?page=${currentPage}&perPageShow=${perPageShow}`,
           {
-            action: "getPurchaseInvoiceList",
+            action: "fetchPurchaseRequisitionList",
             filterValue: filterValue,
           }
         )
@@ -874,47 +872,18 @@ export default function ListView({ accessPermissions }) {
 
     return () => (isSubscribed = false);
   };
-  const checkStatus = (status) => {
-    /**
-     * 1 => Paid
-     * 2 => Overdue
-     * 3 => Partial
-     * 4 => Unpaid
-     */
-    if (status === 4) {
-      return (
-        <span className="bg-success p-3 text-white fs-4 rounded-3">Paid</span>
-      );
-    } else if (status === 2) {
-      return (
-        <span className="bg-danger p-3 text-white fs-4 rounded-3">Overdue</span>
-      );
-    } else if (status === 3) {
-      return (
-        <span className="bg-warning p-3 text-white fs-4 rounded-3">
-          Partial
-        </span>
-      );
-    } else if (status === 1) {
-      return (
-        <span className="bg-primary p-3 text-white fs-4 rounded-3">Unpaid</span>
-      );
-    } else {
-      return <span></span>;
-    }
-  };
 
   const handlePdf = () => {};
   const [isOpen, setIsopen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState("");
 
-  const actionButton = (purchase_id, status) => {
+  const actionButton = (requisition_id, status) => {
     return (
       <>
         <ul className="action">
           {accessPermissions.listAndDetails && (
             <li>
-              <Link href={`/modules/purchase/invoice/details/${purchase_id}`}>
+              <Link href={`/modules/purchase/requisition/${requisition_id}`}>
                 <a>
                   <ViewIcon />
                 </a>
@@ -923,60 +892,63 @@ export default function ListView({ accessPermissions }) {
           )}
           {accessPermissions.createAndUpdate && (
             <li>
-              <Link href={`/modules/purchase/invoice/update/${purchase_id}`}>
+              <Link href={`/modules/purchase/invoice/update/${requisition_id}`}>
                 <a>
                   <EditIcon />
                 </a>
               </Link>
             </li>
           )}
-          {status === 1 && (
-            <>
-              {accessPermissions.delete && (
-                <li>
-                  <Link href="#">
-                    <a onClick={() => handleOpenDelete(purchase_id)}>
-                      <DeleteIcon />
-                    </a>
-                  </Link>
-                </li>
-              )}
-            </>
-          )}
+          <li>
+            <Link href="#">
+              <a onClick={() => handleOpenDelete(requisition_id)}>
+                <DeleteIcon />
+              </a>
+            </Link>
+          </li>
         </ul>
       </>
     );
   };
 
+  const getStatusHtml = (status) => {
+    if (status == "Approved")
+      return <span className="text-success">Active</span>;
+    else if (status == "Pending")
+      return <span style={{ color: "#bb5902" }}> Pending</span>;
+    else if (status == "Cancel")
+      return <span className="text-danger">Cancel</span>;
+  };
+
   const columns = [
     {
-      name: "Supplier Name",
-      selector: (row) => row?.name,
+      name: "Requisition Title",
+      selector: (row) => row?.requisition_title ?? "---",
       // width: "15%",
       sortable: true,
     },
     {
-      name: "Invoice",
-      selector: (row) => row?.purchase_invoice,
+      name: "Total Quantity",
+      selector: (row) => row?.quantity,
       // width: "15%",
       sortable: true,
     },
     {
-      name: "Total Qty",
-      selector: (row) => row.quantity,
+      name: "Request Date",
+      selector: (row) => row.request_date,
       // width: "15%",
       sortable: true,
     },
     {
-      name: "Total Price",
-      selector: (row) => row.total_price,
+      name: "Approved Date",
+      selector: (row) => row.approved_date ?? "---",
       // width: "15%",
       sortable: true,
     },
 
     {
-      name: "Created At",
-      selector: (row) => moment(row.purchase_date).format("DD/MM/YYYY"),
+      name: "Status",
+      selector: (row) => getStatusHtml(row?.status),
       // width: "10%",
       sortable: true,
     },
@@ -1007,28 +979,25 @@ export default function ListView({ accessPermissions }) {
   ];
 
   const dynamicStatusList = [
-    { title: "All", value: "all", selected: true },
-    { title: "deleted", value: "deleted" },
-    { title: "daily", value: "daily" },
-    { title: "weekly", value: "weekly" },
-    { title: "monthly", value: "monthly" },
-    { title: "yearly", value: "yearly" },
+    { title: "Pending", value: "Pending", selected: true },
+    { title: "Cancel", value: "Cancel" },
+    { title: "Approve", value: "Approve" },
   ];
 
   return (
     <>
       <div className="container-fluid">
         {/* <Breadcrumbs crumbs={breadcrumbs} currentPath={pathname} /> */}
-        <HeadSection title="Purchase Invoice" />
+        <HeadSection title="Purchase Requisition" />
         <div className="row">
           <div className="col-md-12 p-xs-2 ">
             <div className="card shadow">
               <div className="d-flex border-bottom title-part-padding align-items-center">
                 <div>
-                  <h4 className="card-title mb-0">Purchase Invoice</h4>
+                  <h4 className="card-title mb-0">Purchase Requisition</h4>
                 </div>
                 <div className="ms-auto flex-shrink-0">
-                  <Link href="/modules/purchase/invoice/create">
+                  <Link href="/modules/purchase/requisition/createPurchaseRequisition">
                     <Button
                       className="shadow rounded btn-sm"
                       variant="primary"
@@ -1036,7 +1005,7 @@ export default function ListView({ accessPermissions }) {
                       // onClick={handleShow}
                       block
                     >
-                      Create Invoice
+                      Create requisition
                     </Button>
                   </Link>
 

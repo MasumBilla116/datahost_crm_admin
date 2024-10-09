@@ -18,6 +18,17 @@ const ML_Purchase = ({pathname}) => {
             </a>
           </Link>
         </li>}
+
+        {CheckAccessCode("m.prchs.crt_invc", userId, permission) && <li className="sidebar-item">
+          <Link href="/modules/purchase/requisition">
+            <a className={`active-${pathname === "/modules/purchase/requisition"}`} onClick={(e) => setModuleItems(e,{moduleName: "purchase", moduleUrl: "/modules/purchase/requisition"})}>
+              <i className="mdi mdi-file-document"/>
+              <span className="hide-menu">Purchase Requisition</span>
+            </a>
+          </Link>
+        </li>}
+
+
         {CheckAccessCode("m.prchs.crt_invc", userId, permission) && <li className="sidebar-item">
           <Link href="/modules/purchase/invoice/create">
             <a className={`active-${pathname === "/modules/purchase/invoice/create"}`} onClick={(e) => setModuleItems(e,{moduleName: "purchase", moduleUrl: "/modules/purchase/invoice/create"})}>

@@ -292,10 +292,6 @@ const CreateInvoice = ({accessPermissions}) => {
     const salePriceValidation = invoice?.some(item=>(  (item?.salesPrice  <= item?.unitPrice)));
 
 
-    console.log('supplierName: ',supplierName)
-    console.log('SupplierInvoiceNumber: ',SupplierInvoiceNumber)
-
-
     if(invoiceItemValidation){
       message = "Unit/Sale price must not be empty"; 
       formError = true;

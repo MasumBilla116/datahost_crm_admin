@@ -127,7 +127,7 @@ const ML_Inventory = ({pathname}) => {
                         <span className="hide-menu">Supplier</span>
                     </a>
                 </Link>
-            </li>}
+            </li>} 
 
             {CheckAccessCode("m.prchs", userId, permission) && <li className="sidebar-item">
                 <Link href="/modules/purchase">
