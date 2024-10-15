@@ -292,7 +292,11 @@ const CreateInvoice = ({accessPermissions}) => {
     const salePriceValidation = invoice?.some(item=>(  (item?.salesPrice  <= item?.unitPrice)));
 
 
-    if(invoiceItemValidation){
+    if(supplierID == ""){
+      message =  "Supplier is requierd";
+      formError = true;
+    }
+     else if(invoiceItemValidation){
       message = "Unit/Sale price must not be empty"; 
       formError = true;
     }
@@ -477,6 +481,7 @@ const CreateInvoice = ({accessPermissions}) => {
     categoryList()
     getItemByCode()
     fetchPaymentMethods();
+    fetchPurchaseRequisitionInfo();
 
     return () => controller.abort();
 
@@ -572,6 +577,51 @@ const CreateInvoice = ({accessPermissions}) => {
   }
 
 
+   // @@ get purchase requisition list
+    const [requisitionInfo,setRequisitionInfo] = useState([]);
+    console.log("🚀 ~ CreateInvoice ~ requisitionInfo:", requisitionInfo)
+   const fetchPurchaseRequisitionInfo =  async () =>{
+    const body = { 
+      action: "getPurchaseRequisitionInfo",
+    };
+  
+    try {
+      const res = await http.post(
+        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`,
+        body
+      );   
+      // Check if data exists and is an array
+      const items = res?.data?.data || [];
+  
+      // Use map() to transform the items 
+      const _itemIds = [];
+      var localIndex = ind; 
+
+      const newItems = items.map((item) =>{ 
+        localIndex +=1; 
+        _itemIds?.push(item?.item_id); 
+
+        return {
+          id: localIndex,
+          requisition_title: item?.requisition_title,
+          itemName: `${item?.item_name} (${item?.item_type_name})`,
+          qty: item?.quantity,
+          itemId: item?.item_id,
+          unit_type_id: item?.unit_type_id,
+          unitPrice: parseInt(0),
+          salesPrice: parseInt(0),
+          total: parseInt(0),
+        };
+      }); 
+      // setInd(localIndex);
+      // setInvItemIds((prev) => [...prev, ..._itemIds]);
+      setRequisitionInfo(newItems);
+    } catch (error) {
+      console.log("🚀 ~ fetchEditInfo ~ error:", error);
+    }  
+   }
+
+
 
   const inputStyle = {border: "1px solid #8a847b33", width: "107px", borderRadius: "5px",color:"#484848"};
 
@@ -662,20 +712,12 @@ const CreateInvoice = ({accessPermissions}) => {
                           </LocalizationProvider>
                         </Form.Group>
                       </div>  
-                    </div> 
-                    
-                  {/* <div className="d-flex justify-content-end align-items-end">
-                      <p className=''>
-                      {localInv}
-                    </p> 
-                  </div> */}
-
-
+                    </div>  
 
                   </div>
                   <div className="row mt-2 mb-3">
-                    <Form.Group>
-                      <Form.Label>Item Select</Form.Label>
+                    <Form.Group className='col-md-6'>
+                      <Form.Label> Select Item</Form.Label>
                       <Select2
                         // className="select-bg"
                         options={items_options?.map(({ item_id,unit_type_id, item_name, item_type_name, category_name }) => ({ value: item_id, unit_type_id:unit_type_id,  label:`${category_name} -- ${item_name}  (${item_type_name})`}))}
@@ -704,7 +746,43 @@ const CreateInvoice = ({accessPermissions}) => {
 
                         }}
                       />
+                    </Form.Group> 
+                    {/* @@ purchase requisition  @@ */}
+                    <Form.Group className='col-md-6'>
+                      <Form.Label>Select Purchase Requisition</Form.Label>
+                      <Select2
+                        // className="select-bg"
+                        options={requisitionInfo?.map(({ itemId,requisition_title,unit_type_id, itemName }) => ({ value: itemId, unit_type_id:unit_type_id, itemName: itemName, label:`${requisition_title}`}))}
+                        value={item_name_options}
+                        onChange={(e) => { 
+                          setItemId(e.value);
+                          // setItemName(itemName); 
+
+                          //if already selected, not selected
+                          if (!inv_item_ids.includes(e.value)) {
+                            setInvItemIds(prev=>[...prev, e.value]);
+                            setInd(() => ind + 1);
+  
+                            setInvoice((prev)=>[...prev,{
+                              id: ind,
+                              unitPrice: parseInt(0),
+                              salesPrice: parseInt(0),
+                              qty: parseInt(1),
+                              total: parseInt(0),
+                              itemId: e.value,
+                              itemName: e.itemName, 
+                              unit_type_id: e.unit_type_id,
+                            }]) 
+                          }
+                
+
+                        }}
+                      />
                     </Form.Group>
+
+
+
+          {/* @@ end purchase requisition @@ */}
                   </div>
                   <div className="row">
                     <div className="col-lg-12 table-responsive">

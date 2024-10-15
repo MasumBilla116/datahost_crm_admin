@@ -39,8 +39,11 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
 
   const { http } = Axios();
   const router = useRouter();
+  const {edit} = router?.query; 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [approveDate, setApproveDate] = useState( );
   const [openDate, setOpenDate] = useState(false);
+  const [openApproveDate, setOpenApproveDate] = useState(false);
   const [itemId, setItemId] = useState("");
   const [itemName, setItemName] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -57,7 +60,8 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
   const [supplier, setSupplier] = useState([]); /**Getting Suppliers */
 
   const [allSupplier, setAllSupplier] = useState([]); /**Getting Suppliers */
-  const items_options = getItems.data;
+  const items_options = getItems.data; 
+
 
   /** Category Part*/
   const [categoryId, setCategoryId] = useState("");
@@ -86,6 +90,69 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
   const [requisitionStatus, setRequisitionStatus] = useState("Pending");
   const [requisitionTitle, setRequisitionTitle] = useState("");
 
+  // @@ get edit info
+  useEffect(()=>{
+    if(edit != "" || edit != undefined){
+      fetchEditInfo();
+    }
+
+  },[edit]);
+
+  const fetchEditInfo = async () => {
+    const body = {
+      requisition_id: edit,
+      action: "getPurchaseRequisitionEditInfo",
+    };
+  
+    try {
+      const res = await http.post(
+        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`,
+        body
+      );   
+      // Check if data exists and is an array
+      const items = res?.data?.data || [];
+  
+      // Use map() to transform the items 
+      const _itemIds = [];
+      var localIndex = ind;
+      var title = "";
+      var request_date = "";
+      var approved_date = "";
+      var remark = "";
+      var status = "Pending";
+      
+
+      const newItems = items.map((item) =>{ 
+        localIndex +=1; 
+        _itemIds?.push(item?.item_id);
+        title = item?.requisition_title;
+        request_date = item?.request_date;
+        approved_date = item?.approved_date;
+        remark =  item?.remark;
+        status =  item?.status;
+
+        return {
+          id: localIndex,
+          itemName: `${item?.item_name} (${item?.item_type_name})`,
+          qty: item?.quantity,
+          itemId: item?.item_id
+        };
+      });
+  
+      // Set the invoice with the new items
+      setRequisitionStatus(status);
+      setTotalRemarks(remark);
+      setRequisitionTitle(title);
+      setDate(format(new Date(request_date), "yyyy-MM-dd"));
+      setInd(localIndex);
+      setInvItemIds((prev) => [...prev, ..._itemIds]);
+      setInvoice(newItems);
+    } catch (error) {
+      console.log("🚀 ~ fetchEditInfo ~ error:", error);
+    }
+  };
+   
+
   // let item_name_options = { value: item_obj?.id || '', label: item_obj?.name || 'Select...' };
   let item_name_options = {
     value: itemId || "",
@@ -93,7 +160,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
   };
   var options = [];
 
-  const [invoice, setInvoice] = useState([]);
+  const [invoice, setInvoice] = useState([]); 
   const [paymentTypeId, setPaymentTypeId] = useState("");
   const [ind, setInd] = useState(1);
 
@@ -112,9 +179,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
 
   const StoringData = (e) => {
     e.preventDefault();
-    setGrandTotal(parseInt(grandTotal) + parseInt(total));
-    // setQuantity("")
-    // e.target.reset();
+    setGrandTotal(parseInt(grandTotal) + parseInt(total)); 
 
     setInd(() => ind + 1);
 
@@ -147,9 +212,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
     label: itemName,
   });
   const [pending, setPending] = useState(true); 
-
-
-
+ 
   const [tempTotal, setTempTotal] = useState(0);
 
   async function editobj(index, editId) {
@@ -309,6 +372,8 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
         requisition_status: requisitionStatus,
         remarks: totalRemarks,
         request_date: date,
+        approved_date: approveDate,
+        purchase_requisition_id: edit,
       };
 
       await http
@@ -319,7 +384,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
         .then((res) => {
           setLoading(false);
           notify("success", "Purchase requisition successfully Added!");
-          router.push(`/modules/purchase/invoice/purchaseRequisition`);
+          router.push(`/modules/purchase/requisition`);
         });
       setGrandTotal(0);
     } catch (error) {
@@ -329,8 +394,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
       setGrandTotal(0);
     }
   }
- 
-
+  
   useEffect(() => {
     const controller = new AbortController();
 
@@ -598,7 +662,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
                         />
                       </Form.Group>
                       <Form.Group
-                        className="mb-3 col-md-6"
+                        className="mb-3 col-md-3"
                         controlId="formBasicDesc"
                       >
                         <Form.Label>Requisition Status</Form.Label>
@@ -614,6 +678,34 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
                           <option value="Approve">Approve</option>
                         </Select>
                       </Form.Group>
+
+                      <Form.Group className="col-md-3">
+                      <Form.Label>Approved Date</Form.Label>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                          size={1}
+                          label="Enter the date"
+                          open={openApproveDate}
+                          onClose={() => setOpenApproveDate(false)}
+                          value={approveDate}
+                          inputFormat="yyyy-MM-dd"
+                          onChange={(event) => {
+                            setApproveDate(format(new Date(event), "yyyy-MM-dd"));
+                          }}
+                          renderInput={(params) => (
+                            <ThemeProvider theme={theme}>
+                              <TextField
+                                onClick={() => setOpenApproveDate(true)}
+                                fullWidth={true}
+                                size="small"
+                                {...params}
+                                required
+                              />
+                            </ThemeProvider>
+                          )}
+                        />
+                      </LocalizationProvider>
+                    </Form.Group>
                     </div>
 
                     {!!grandTotal && (
@@ -632,7 +724,7 @@ const createPurchaseRequisition = ({ accessPermissions }) => {
                           disabled={!invoice.length}
                           onClick={submitForm}
                         >
-                          Create Requisition
+                          {( edit && edit !== "" ) ? "Update" : "Create"} Requisition
                         </Button>
                       )}
                     </div>

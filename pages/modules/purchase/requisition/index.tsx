@@ -1,6 +1,6 @@
 // import { Container, Button as FButton } from 'react-floating-action-button'
 import Link from "next/link";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
 // import DatePicker from "react-datepicker";
 import { createTheme } from "@mui/material/styles";
@@ -562,64 +562,23 @@ const ViewForm = ({ supplierId }) => {
 };
 
 //Delete component
-const DeleteComponent = ({
-  onSubmit,
-  supplierId,
-  pending,
-  setShowDeleteModal,
-}) => {
-  const { http } = Axios();
+const DeleteComponent = ({ onSubmit, requisitionId, setShowDeleteModal }) => {
+  let dataSet = { id: requisitionId, action: "deletePurchaseRequisition" };
 
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(true);
+  console.log("🚀 ~ dataSet:", dataSet);
 
-  const fetchSupplierInfo = useCallback(async () => {
-    let isSubscribed = true;
-    setLoading(true);
-    await http
-      .post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/supplier`, {
-        action: "getSupplierDetailsByID",
-        id: supplierId,
-      })
-      .then((res) => {
-        if (isSubscribed) {
-          setName(res?.data?.data[0].supplier_name);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setLoading(false);
-      });
-
-    return () => (isSubscribed = false);
-  }, [supplierId]);
-
-  useEffect(() => {
-    fetchSupplierInfo();
-  }, [fetchSupplierInfo]);
-
-  let dataSet = { id: supplierId, action: "deleteInvoice" };
   return (
     <>
       <Modal.Body>
         <Modal.Title className="fs-5">
-          Are you sure to Cancel {name}'s Invoice ?
+          Are you sure delete this requisition?
         </Modal.Title>
       </Modal.Body>
       <Modal.Footer>
-        <Button
-          variant="success"
-          disabled={pending || loading}
-          onClick={() => setShowDeleteModal(false)}
-        >
+        <Button variant="success" onClick={() => setShowDeleteModal(false)}>
           Discard
         </Button>
-        <Button
-          variant="danger"
-          disabled={pending || loading}
-          onClick={() => onSubmit(dataSet)}
-        >
+        <Button variant="danger" onClick={() => onSubmit(dataSet)}>
           Confirm
         </Button>
       </Modal.Footer>
@@ -671,111 +630,32 @@ export default function ListView({ accessPermissions }) {
   });
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(false);
-
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-
-  //create floor form
-  const submitForm = async (items) => {
-    let isSubscribed = true;
-    setLoading(true);
-    await http
-      .post(
-        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/roomManagement/tower`,
-        items
-      )
-      .then((res) => {
-        if (isSubscribed) {
-          notify("success", "successfully Added!");
-          handleClose();
-          setLoading(false);
-        }
-      })
-      .catch((e) => {
-        const msg = e?.response?.data?.response;
-
-        if (typeof msg == "string") {
-          notify("error", `${msg}`);
-        } else {
-          if (msg?.name) {
-            notify("error", `${msg?.name?.Name}`);
-          }
-          if (msg?.description) {
-            notify("error", `${msg?.description?.Description}`);
-          }
-        }
-        setLoading(false);
-      });
-
-    fetchItemList();
-
-    return () => (isSubscribed = false);
-  };
+ 
 
   //Update Modal form
   const [showVieweModal, setShowViewModal] = useState(false);
   const [pending, setPending] = useState(false);
-  const [supplierId, setSupllierId] = useState(null);
+  const [requisitionId, setRequisitionId] = useState(null);
 
   const handleExit = () => setShowViewModal(false);
 
-  const handleOpen = (supplierId) => {
+  const handleOpen = (requisitionId) => {
     setShowViewModal(true);
-    setSupllierId(supplierId);
-  };
-
-  //Update form
-  const updateForm = async (formData) => {
-    let isSubscribed = true;
-    setPending(true);
-    await http
-      .post(
-        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/roomManagement/tower`,
-        formData
-      )
-      .then((res) => {
-        if (isSubscribed) {
-          notify("success", "successfully Updated!");
-          handleExit();
-          setPending(false);
-        }
-      })
-      .catch((e) => {
-        const msg = e?.response?.data?.response;
-
-        if (typeof msg == "string") {
-          notify("error", `${msg}`);
-        } else {
-          if (msg?.name) {
-            notify("error", `${msg?.name?.Name}`);
-          }
-          if (msg?.description) {
-            notify("error", `${msg?.description?.Description}`);
-          }
-        }
-        setPending(false);
-      });
-
-    fetchItemList();
-
-    return () => (isSubscribed = false);
+    setRequisitionId(requisitionId);
   };
 
   //Delete Modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const handleExitDelete = () => setShowDeleteModal(false);
 
-  const handleOpenDelete = (purchase_id) => {
+  const handleOpenDelete = (requisitionId) => {
     setShowDeleteModal(true);
-    setSupllierId(purchase_id);
+    setRequisitionId(requisitionId);
   };
 
   //Delete Tower form
 
   const handleDelete = async (formData) => {
-    console.log("formData: ", formData);
-    return;
-
     let isSubscribed = true;
     setPending(true);
     await http
@@ -798,8 +678,6 @@ export default function ListView({ accessPermissions }) {
         console.log(e);
         setPending(false);
       });
-
-    fetchItemList();
 
     return () => (isSubscribed = false);
   };
@@ -892,7 +770,9 @@ export default function ListView({ accessPermissions }) {
           )}
           {accessPermissions.createAndUpdate && (
             <li>
-              <Link href={`/modules/purchase/invoice/update/${requisition_id}`}>
+              <Link
+                href={`/modules/purchase/requisition/createPurchaseRequisition?edit=${requisition_id}`}
+              >
                 <a>
                   <EditIcon />
                 </a>
@@ -912,8 +792,8 @@ export default function ListView({ accessPermissions }) {
   };
 
   const getStatusHtml = (status) => {
-    if (status == "Approved")
-      return <span className="text-success">Active</span>;
+    if (status == "Approve")
+      return <span className="text-success">Approve</span>;
     else if (status == "Pending")
       return <span style={{ color: "#bb5902" }}> Pending</span>;
     else if (status == "Cancel")
@@ -1016,7 +896,7 @@ export default function ListView({ accessPermissions }) {
                   >
                     <Modal.Header closeButton></Modal.Header>
                     <Modal.Body>
-                      <ViewForm supplierId={supplierId} />
+                      <ViewForm supplierId={requisitionId} />
                     </Modal.Body>
                   </Modal>
                   {/* End Update Modal Form */}
@@ -1027,8 +907,7 @@ export default function ListView({ accessPermissions }) {
                     <DeleteComponent
                       onSubmit={handleDelete}
                       setShowDeleteModal={setShowDeleteModal}
-                      supplierId={supplierId}
-                      pending={pending}
+                      requisitionId={requisitionId}
                     />
                   </Modal>
                   {/* End Delete Modal Form */}
