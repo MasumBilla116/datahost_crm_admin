@@ -5,15 +5,14 @@ import converter from "number-to-words";
 import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
 import DataTable from "react-data-table-component";
-import { FaEdit, FaFilePdf, FaPhone } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 
+import BarcodeGenerator from "../../../../../components/Barcode";
+import PrintButton from "../../../../../components/elements/PrintButton";
+import HotelLogo from "../../../../../components/hotelLogo";
 import PropagateLoading from "../../../../../components/PropagateLoading";
 import toast from "../../../../../components/Toast/index";
 import Axios from "../../../../../utils/axios";
-import HotelLogo from "../../../../../components/hotelLogo";
-import BarcodeGenerator from "../../../../../components/Barcode";
-import Breadcrumbs from "../../../../../components/Breadcrumbs";
-import PrintButton from "../../../../../components/elements/PrintButton";
 
 function InvoiceDetails() {
   // Router setup
@@ -32,6 +31,7 @@ function InvoiceDetails() {
 
   //state declaration
   const [invoices, setInvoices] = useState<any[]>([]);
+  console.log("🚀 ~ InvoiceDetails ~ invoices:", invoices);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [supplierID, setSupplierID] = useState<number>();
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
@@ -70,13 +70,15 @@ function InvoiceDetails() {
           setInvoices(res?.data?.data || []);
           let totalamount = 0;
           res?.data?.data.map((invoice: any) => {
-            totalamount += invoice.unitPrice * invoice.item_qty;
+            totalamount += invoice.unit_price * invoice.stock;
           });
           setTotalAmount(totalamount);
         })
         .catch((err) => {
           console.log("Something went wrong !" + <br /> + err);
         });
+
+      setInitialLoading(false);
     };
     isReady && getInvoiceDetails();
 
@@ -227,38 +229,32 @@ function InvoiceDetails() {
     {
       name: <span className="fw-bold">SL</span>,
       selector: (row: any, index: number) => index + 1,
-      width: "10%",
     },
     {
-      name: <span className="fw-bold">Product</span>,
-      selector: (row: { itemName: string }) => row?.itemName,
-      width: "40%",
+      name: <span className="fw-bold">Item</span>,
+      selector: (row: { item_name: string }) => row?.item_name,
     },
     {
-      name: <span className="fw-bold">Remarks</span>,
-      selector: (row: { item_remarks: string }) => row?.item_remarks,
-      width: "10%",
+      name: <span className="fw-bold">Item Type</span>,
+      selector: (row: { item_type_name: string }) => row?.item_type_name,
     },
     {
-      name: <span className="fw-bold">Cost</span>,
-      selector: (row: { unitPrice: number }) => row?.unitPrice,
-      width: "10%",
+      name: <span className="fw-bold">Unit Price</span>,
+      selector: (row: { unit_price: number }) => row?.unit_price,
     },
     {
-      name: <span className="fw-bold">Qty</span>,
-      selector: (row: { item_qty: number }) => row?.item_qty,
-      width: "10%",
+      name: <span className="fw-bold">Purchase Qty</span>,
+      selector: (row: { quantity: number }) => row?.quantity,
     },
     {
-      name: <span className="fw-bold">Unit Type</span>,
-      selector: (row: { piece: string }) => row?.piece.slice(0, 1) + "(s)",
-      width: "10%",
+      name: <span className="fw-bold">Availabel Qty</span>,
+      selector: (row: { stock: number }) => row?.stock,
     },
+
     {
       name: <span className="fw-bold">Total</span>,
-      selector: (row: { item_qty: number; unitPrice: number }) =>
-        (row?.item_qty * row?.unitPrice).toFixed(2),
-      width: "10%",
+      selector: (row: { stock: number; unit_price: number }) =>
+        (row?.stock * row?.unit_price).toFixed(2),
     },
   ];
   const rowData = invoices;
@@ -288,18 +284,15 @@ function InvoiceDetails() {
             ) : (
               <div className="row small" style={{ padding: "20px" }}>
                 <div className="col-sm-4 col-lg-4 col-md-4">
-                  <div>
-                    <div>{supplierInfo?.name}</div>
-                    <strong>{supplierInfo?.address} </strong>
-                    {!!supplierInfo?.contact_number && (
+                  {invoices && (
+                    <div>
+                      <div>{invoices[0]?.supplier_name}</div>
+                      <strong>{invoices[0]?.address} </strong>
                       <div className="mt-1">
-                        Phone: {supplierInfo?.contact_number}
+                        Phone: {invoices[0]?.contact_number}
                       </div>
-                    )}
-                    {supplierInfo?.email && (
-                      <div>Email: {supplierInfo?.email}</div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
                 <div className="text-center col-sm-4 col-lg-4 col-md-4 ">
                   {/* <div>
@@ -312,40 +305,22 @@ function InvoiceDetails() {
                   />
                 </div>
                 <div className="row col-sm-4 col-lg-4 col-md-4 ">
-                  <div className="ms-auto col-sm-8 col-lg-8 col-md-8 ">
-                    <div>
-                      <strong>Supplier Invoice:</strong>
-                      <span>
-                        {invoices.length && invoices[0]?.supplier_invoice_id}
-                      </span>
+                  {invoices && (
+                    <div className="ms-auto col-sm-8 col-lg-8 col-md-8 ">
+                      <div>
+                        <strong>Purchase Invoice: </strong>
+                        <span>{invoices[0]?.purchase_invoice}</span>
+                      </div>
+                      <div className="mt-2">
+                        <strong>Total Amount: </strong>
+                        <span>{totalAmount} Tk</span>
+                      </div>
+                      <div>
+                        <strong>Invoice Date: </strong>
+                        <span>{invoices[0]?.purchase_date}</span>
+                      </div>
                     </div>
-                    <div>
-                      <strong>Local Invoice:</strong>
-                      <span>
-                        {invoices.length && invoices[0]?.local_invoice}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <strong>Total Amount:</strong>
-                      <span>{totalAmount} Tk</span>
-                    </div>
-                    <div>
-                      <strong>Invoice Date:</strong>
-                      <span>
-                        {invoices.length && invoices[0]?.invoice_date}
-                      </span>
-                    </div>
-                    <div>
-                      <strong>Create Date-Time:</strong>
-                      <span>{invoices.length && invoices[0]?.created_at}</span>
-                    </div>
-                    <div>
-                      <strong>Remarks:</strong>
-                      <span>
-                        {invoices.length && invoices[0]?.common_remarks}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}

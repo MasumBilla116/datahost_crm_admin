@@ -9,24 +9,23 @@ import ServiceFilter from "../../../../components/Filter/ServiceFilter";
 import Axios from "../../../../utils/axios";
 import { getSSRProps } from "../../../../utils/getSSRProps";
 
-
 export const getServerSideProps = async (context) => {
-  const {
-    permission,
-    query,
-    accessPermissions
-  } = await getSSRProps({ context: context, access_code: "m.invtr.stkrpt" });
+  const { permission, query, accessPermissions } = await getSSRProps({
+    context: context,
+    access_code: "m.invtr.stkrpt",
+  });
   return {
     props: {
       permission,
       query,
-      accessPermissions
+      accessPermissions,
     },
   };
 };
 
-const index = ({accessPermissions}) => {
+const index = ({ accessPermissions }) => {
   const [filteredData, setFilteredData] = useState([]);
+  console.log("🚀 ~ index ~ filteredData:", filteredData)
   // const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalSum, setTotalSum] = useState(0);
@@ -50,16 +49,15 @@ const index = ({accessPermissions}) => {
   const [categoryId, setCategoryId] = useState(null);
   const [category, setCategory] = useState([]);
 
-
-    /**** Table  */
+  /**** Table  */
 
   // @ Default date
   const date = new Date();
   const y = date.getFullYear();
   const m = date.getMonth() + 1;
 
-  const [currentPage, setCurrentPage] = useState(1)
-  const [perPageShow, setPerPageShow] = useState(15)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPageShow, setPerPageShow] = useState(15);
   const [tblLoader, setTblLoader] = useState(true);
   const [filterValue, setFilterValue] = useState({
     status: "all",
@@ -69,19 +67,16 @@ const index = ({accessPermissions}) => {
     paginate: true,
   });
 
-
   // for data table chagne
   const handleChangeFilter = (e) => {
-    setFilterValue(prev => ({
+    setFilterValue((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
       paginate: true,
-      filter: true
+      filter: true,
     }));
     setSearch("");
   };
-
-
 
   /**** Table  */
 
@@ -102,42 +97,40 @@ const index = ({accessPermissions}) => {
   //Fetch List Data for datatable
   const data = itemList?.data;
 
-
-
-
   const fetchItemList = async () => {
     let isSubscribed = true;
-    setTblLoader(true);    
-      if (!filteredData?.[currentPage] || filterValue.filter === true) {
-        await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/stock?page=${currentPage}&perPageShow=${perPageShow}`, {
-          action: "getAllStocksList",
-          filterValue: filterValue
-        })
-          .then((res) => {
-            if (isSubscribed) {
-              setItemList(res?.data);
-              // setFilteredData(res.data?.data);
-              setFilteredData(prev => ({
-                ...prev,
-                total: res.data?.data?.total || prev.total,
-                paginate: true,
-                [currentPage]: res?.data?.data[currentPage]
-              }));
-            }
-          });
-        setFilterValue(prev => ({
-          ...prev,
-          filter: false,
-          search: null
-        }));
-      }
-      setTblLoader(false); 
-
-
+    setTblLoader(true);
+    if (!filteredData?.[currentPage] || filterValue.filter === true) {
+      await http
+        .post(
+          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/stock?page=${currentPage}&perPageShow=${perPageShow}`,
+          {
+            action: "getAllStocksList",
+            filterValue: filterValue,
+          }
+        )
+        .then((res) => {
+          console.log("🚀 ~ .then ~ res:", res);
+          if (isSubscribed) {
+            setItemList(res?.data?.data);
+            setFilteredData((prev) => ({
+              ...prev,
+              total: res.data?.data?.total || prev.total,
+              paginate: true,
+              [currentPage]: res?.data?.data[currentPage],
+            }));
+          }
+        });
+      setFilterValue((prev) => ({
+        ...prev,
+        filter: false,
+        search: null,
+      }));
+    }
+    setTblLoader(false);
 
     return () => (isSubscribed = false);
   };
-
 
   useEffect(() => {
     const controller = new AbortController();
@@ -163,58 +156,48 @@ const index = ({accessPermissions}) => {
 
   const columns = [
     {
-      name: "Name",
-      selector: (row) => row.name,
+      name: "Item",
+      selector: (row) => `${row.item_name} (${row?.item_type_name})`,
+      sortable: true,
+    }, 
+    {
+      name: "Current Stock",
+      selector: (row) => row.stock,
       sortable: true,
     },
     {
-      name: "Item Code",
-      selector: (row) => row.code,
+      name: "Unit Price",
+      selector: (row) => (
+        <>
+          {" "}
+          <ActiveCurrency /> {row.unit_price}
+        </>
+      ),
       sortable: true,
-    },
+    }, 
     {
-      name: "Category",
-      selector: (row) => row.name,
+      name: "Sale Price",
+      selector: (row) => (
+        <>
+          {" "}
+          <ActiveCurrency /> {row.sales_price}
+        </>
+      ),
       sortable: true,
-    },
+    }, 
     {
-      name: "Unit Cost",
-      selector: (row) => <> <ActiveCurrency/> { row.unit_cost }</>,
+      name: "Total Sale Price",
+      selector: (row) => (
+        <>
+          {" "}
+          <ActiveCurrency /> {row.sales_price *  row.stock}
+        </>
+      ),
       sortable: true,
-    },
-    {
-      name: "Opening Stock",
-      selector: (row) => row.opening_stock,
-      sortable: true,
-    },
-    {
-      name: "Quantity",
-      selector: (row) => row.qty,
-      sortable: true,
-    },
-    {
-      name: "Stock Alert",
-      selector: (row) => row.min_stock,
-      sortable: true,
-    },
-
-  ];
-
-  // useEffect(() => {
-  //   let controller = new AbortController();
-  //   const result = data?.filter((item) => {
-  //     return (
-  //       item.name.toLowerCase().match(search.toLocaleLowerCase()) ||
-  //       item.code.toLowerCase().match(search.toLocaleLowerCase())
-  //     );
-  //   });
-
-  //   setFilteredData(result);
-  //   return () => controller.abort();
-  // }, [search]);
-
-
-
+    }, 
+    
+     
+  ]; 
   const handleChangeFilterChoice = (val) => {
     setChoiceValue(val);
     setSearch("");
@@ -235,24 +218,7 @@ const index = ({accessPermissions}) => {
         },
       },
     },
-  });
-
-  // useEffect(() => {
-  //   let controller = new AbortController();
-  //   const result = data?.filter((item) => {
-  //     if (choiceValue === "low-stock") {
-  //       // return (parseInt(item?.qty)/parseInt(item?.opening_stock)*100) < 30;
-  //       return item?.qty <= item?.min_stock;
-  //     } else {
-  //       return item?.status === 1;
-  //     }
-  //   });
-
-  //   setFilteredData(result);
-  //   return () => controller.abort();
-  // }, [choiceValue]);
-
- 
+  }); 
 
   //breadcrumbs
   const breadcrumbs = [
@@ -260,15 +226,10 @@ const index = ({accessPermissions}) => {
     { text: "All Stock Items", link: "/modules/stock" },
   ];
 
-
-  
   const dynamicStatusList = [
-    { title: "All", value: "all", selected: true },
-    { title: "Deleted", value: "deleted" },
-    { title: "one-time-usable", value: "one-time-usable" },
-    { title: "long-time-usable", value: "long-time-usable" },
-    { title: "depreciable-item", value: "depreciable-item" },
-
+    { title: "All", value: "all" ,selected: true},
+    { title: "In-Stock", value: "in_stock"},
+    { title: "Stock Out", value: "stock_out" }, 
   ];
 
   return (
@@ -283,26 +244,35 @@ const index = ({accessPermissions}) => {
                 <h4 className="card-title mb-0">All Stock Items</h4>
               </div>
             </div>
-            <div className="card-body"> 
+            <div className="card-body">
               <div className="custom-data-table position-relative">
-              {accessPermissions.download &&<PDFAndPrintBtn
-                      currentPage={currentPage}
-                      rowsPerPage={perPageShow}
-                      data={filteredData[currentPage]}
-                      columns={columns}
-                      position={true}
-                    />}
-              <ServiceFilter
-                statusList={dynamicStatusList}
-                filterValue={filterValue}
-                setFilterValue={setFilterValue}
-                handleChangeFilter={handleChangeFilter}
-                dateFilter={false}
-                placeholderText="Name"
-              />
-<FilterDatatable tblLoader={tblLoader} columns={columns} setFilterValue={setFilterValue} filteredData={filteredData} setCurrentPage={setCurrentPage} currentPage={currentPage} perPage={perPageShow} />
-
-            </div>
+                {accessPermissions.download && (
+                  <PDFAndPrintBtn
+                    currentPage={currentPage}
+                    rowsPerPage={perPageShow}
+                    data={filteredData[currentPage]}
+                    columns={columns}
+                    position={true}
+                  />
+                )}
+                <ServiceFilter
+                  statusList={dynamicStatusList}
+                  filterValue={filterValue}
+                  setFilterValue={setFilterValue}
+                  handleChangeFilter={handleChangeFilter}
+                  dateFilter={false}
+                  placeholderText="Name"
+                />
+                <FilterDatatable
+                  tblLoader={tblLoader}
+                  columns={columns}
+                  setFilterValue={setFilterValue}
+                  filteredData={filteredData}
+                  setCurrentPage={setCurrentPage}
+                  currentPage={currentPage}
+                  perPage={perPageShow}
+                />
+              </div>
             </div>
           </div>
         </div>
