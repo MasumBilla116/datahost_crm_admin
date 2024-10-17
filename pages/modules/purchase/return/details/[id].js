@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react';
 import { Button } from "react-bootstrap";
-import { FaPhone, FaEdit, FaFilePdf, FaHandPointLeft, FaHandPointRight } from 'react-icons/fa';
-import Axios from '../../../../../utils/axios';
-import toast from "../../../../../components/Toast/index";
-import index from '../index';
+import { FaHandPointRight } from 'react-icons/fa';
 import PropagateLoading from '../../../../../components/PropagateLoading';
-import Breadcrumbs from '../../../../../components/Breadcrumbs';
+import toast from "../../../../../components/Toast/index";
+import Axios from '../../../../../utils/axios';
 
 
 function ReturnDetails() {
@@ -59,20 +57,19 @@ function ReturnDetails() {
             let body = {}
             body = {
                 action: "getReturnInvoiceDetails",
-                supplier_invoice_id: id
+                return_invoice_id: id
             }
-            await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/invoice`,
+            await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`,
                 body
             ).then(res => {
-                setSupplierID(res?.data?.data[0]?.supplier_id)
+                console.log("🚀 ~ getInvoiceDetails ~ res:", res)
+                // setSupplierID(res?.data?.data[0]?.supplier_id) 
+                // setInvoices(res?.data?.data || []);
+                // let totalamount = 0;
 
-
-                setInvoices(res?.data?.data || []);
-                let totalamount = 0;
-
-                res?.data?.data.map((invoice) => {
-                    totalamount += invoice.unitPrice * invoice.item_qty
-                })
+                // res?.data?.data.map((invoice) => {
+                //     totalamount += invoice.unitPrice * invoice.item_qty
+                // })
 
             }).catch((err) => {
                 console.log(err + <br /> + 'Something went wrong !')

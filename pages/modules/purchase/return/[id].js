@@ -216,6 +216,7 @@ function PurchaseReturnDetails() {
     index,
     itemName,
     itemId,
+    purchase_id,
     invItemid,
     itemQty,
     itemUnitprice
@@ -238,14 +239,12 @@ function PurchaseReturnDetails() {
         ...storeItems,
         {
           id: itemId,
+          purchase_id: purchase_id,
           item_name: itemName,
           item_quantity: Number(itemQty),
           itemId: invItemid,
           item_unitPrice: itemUnitprice,
-          invoiceId: invoiceID,
           status: checkedCondition,
-          editQty: 0,
-          editPrice: 0,
         },
       ]);
     }
@@ -346,47 +345,36 @@ function PurchaseReturnDetails() {
     });
   }
 
-  async function purchasePartialReturn() {
+  async function purchasePartialReturn(e) {
+    e.preventDefault();
     if (storeItems?.length) {
-      storeItems?.map(async (storeItem) => {
-        let body = {
-          action: "returnSupplierInvoice",
-          qty: storeItem?.item_quantity,
-          itemId: storeItem?.itemId,
-          invoiceitemId: storeItem?.id,
-          invoiceId: invoiceID,
-          unitPrice: storeItem?.item_unitPrice,
-          supplierID: supplierID,
-          totalAmount: storeItem?.item_quantity * storeItem?.item_unitPrice,
-          returnType: "Partial",
-          statusCode: 1,
-          itemStatuscode: 1,
-        };
+      let body = {
+        action: "returnPurchaseProduct",
+        return_items : storeItems,
+      };   
+      await http
+        .post(
+          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`,
+          body
+        )
+        .then((res) => { 
 
-        await http
-          .post(
-            `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/invoice`,
-            body
-          )
-          .then((res) => {
-            notify(
-              "success",
-              storeItem?.item_name + " " + "Successfully Return!"
-            );
-
-            console.log("Got it");
-          })
-          .catch((err) => {
-            console.log(err + <br /> + "Something went wrong !");
+          const returnInvoiceId = res?.data?.data;
+          
+          notify(
+            "success", "Return Successfully"
+          );
+          setTotalAmount(0);
+          router.push({
+            pathname: "/modules/purchase/return/details/[invoiceID]",
+            query: { invoiceID: returnInvoiceId },
           });
+        })
+        .catch((err) => {
+          console.log(err + <br /> + "Something went wrong !");
+        });
 
-        console.log(body);
-        setTotalAmount(0);
-      });
-      router.push({
-        pathname: "/modules/purchase/return/details/[invoiceID]",
-        query: { invoiceID: invoiceID },
-      });
+      
     }
   }
 
@@ -517,7 +505,7 @@ function PurchaseReturnDetails() {
                           let finalQTY = item.quantity - item.stock;
 
                           return (
-                            <tr>
+                            <tr key={index+12356}>
                               <td>
                                 <input
                                   type="checkbox"
@@ -529,6 +517,7 @@ function PurchaseReturnDetails() {
                                       index,
                                       item.item_name,
                                       item.id,
+                                      item.purchase_id,
                                       item.item_id,
                                       finalQTY,
                                       item.unit_price
@@ -565,14 +554,14 @@ function PurchaseReturnDetails() {
 
                               <td>
                                 {checkedIds.includes(String(id)) ? (
-                                  <>
+                                  <> 
                                     <TextInput2
                                       type="number"
                                       label="Returning Qty"
                                       name={`qty_${item.id}`}
-                                      min="0"
-                                      max={item.quantity - item.stock}
-                                      maxlength={item.quantity - item.stock}
+                                      min={1}
+                                      max={item.stock}
+                                      maxLength={item.stock}
                                       defaultValue={finalQTY}
                                       required
                                       onChange={(e) =>
@@ -588,6 +577,7 @@ function PurchaseReturnDetails() {
                                     <small className="font-monospace">
                                       <strong>Availabel Qty: </strong>{" "}
                                       {item?.stock}
+                                      {item.quantity }
                                     </small>
                                   </>
                                 ) : (
@@ -598,7 +588,7 @@ function PurchaseReturnDetails() {
                                       name={`qty_${item.id}`}
                                       min="0"
                                       max={item.quantity - item.stock}
-                                      maxlength={item.quantity - item.stock}
+                                      maxLength={item.quantity - item.stock}
                                       value={item.item_qty - item.stock}
                                       readOnly
                                       onChange={(e) =>
