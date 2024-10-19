@@ -33,7 +33,7 @@ const ML_Purchase = ({pathname}) => {
           <Link href="/modules/purchase/invoice/create">
             <a className={`active-${pathname === "/modules/purchase/invoice/create"}`} onClick={(e) => setModuleItems(e,{moduleName: "purchase", moduleUrl: "/modules/purchase/invoice/create"})}>
               <i className="mdi mdi-file-document"/>
-              <span className="hide-menu">Create Invoice</span>
+              <span className="hide-menu">Create Purchase</span>
             </a>
           </Link>
         </li>}

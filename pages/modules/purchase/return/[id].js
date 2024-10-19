@@ -358,6 +358,7 @@ function PurchaseReturnDetails() {
           body
         )
         .then((res) => { 
+        console.log("🚀 ~ .then ~ res:", res)
 
           const returnInvoiceId = res?.data?.data;
           

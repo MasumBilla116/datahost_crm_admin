@@ -1,7 +1,5 @@
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
-import { Button } from "react-bootstrap";
-import { FaHandPointRight } from 'react-icons/fa';
 import PropagateLoading from '../../../../../components/PropagateLoading';
 import toast from "../../../../../components/Toast/index";
 import Axios from '../../../../../utils/axios';
@@ -61,19 +59,18 @@ function ReturnDetails() {
             }
             await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`,
                 body
-            ).then(res => {
-                console.log("🚀 ~ getInvoiceDetails ~ res:", res)
-                // setSupplierID(res?.data?.data[0]?.supplier_id) 
-                // setInvoices(res?.data?.data || []);
-                // let totalamount = 0;
+            ).then(res => { 
+                setInvoices(res?.data?.data || []);
+                let totalamount = 0;
 
-                // res?.data?.data.map((invoice) => {
-                //     totalamount += invoice.unitPrice * invoice.item_qty
-                // })
-
+                res?.data?.data.map((invoice) => {
+                    totalamount += invoice.unit_price * invoice.return_quantity
+                })
+                setTotalAmount(totalamount);
             }).catch((err) => {
                 console.log(err + <br /> + 'Something went wrong !')
             });
+            setLoading(false);
         }
 
         isReady && getInvoiceDetails()
@@ -84,65 +81,7 @@ function ReturnDetails() {
     }, [id, isReady])
 
 
-
-    useEffect(() => {
-        const controller = new AbortController();
-
-        //fetching supplier info
-        const getSupplierInfo = async () => {
-            if (supplierID) {
-                await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/supplier`, { action: "getSupplierByID", id: supplierID })
-                    .then((res) => {
-                        setSupplierInfo({
-                            ...supplierInfo,
-                            name: res?.data?.data[0]?.name,
-                            address: res?.data?.data[0]?.address,
-                            contact_number: res?.data?.data[0]?.contact_number,
-                            email: res?.data?.data[0]?.email
-                        })
-                        setLoading(false)
-                    })
-                    .catch((err) => {
-                        console.log(err + <br /> + 'Something went wrong !')
-                    });
-            }
-        }
-        getSupplierInfo()
-
-        return () => controller.abort();
-    }, [supplierID])
-
-    useEffect(() => {
-        const controller = new AbortController();
-
-        //fetching supplier info
-        const getSupplierInvoice = async () => {
-            if (supplierID) {
-                await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/invoice`, { action: "getInvoiceByID", id: id })
-                    .then((res) => {
-                        setCheckreturn(res?.data?.data[0]?.is_returned)
-                        setsupplierInvoiceinfo({
-                            ...supplierInvoiceinfo,
-                            return_type: res?.data?.data[0]?.return_type,
-                            is_returned: res?.data?.data[0]?.is_returned,
-                            return_amount: res?.data?.data[0]?.return_amount
-                        })
-                        setTotalAmount(res?.data?.data[0]?.return_amount);
-                    })
-                    .catch((err) => {
-                        console.log(err + <br /> + 'Something went wrong !')
-                    });
-            }
-        }
-        getSupplierInvoice()
-
-        return () => controller.abort();
-    }, [supplierID])
-
-
-
-
-
+ 
 
 
     async function cancelPurchaseReturn() {
@@ -194,7 +133,7 @@ function ReturnDetails() {
                 <div className='mb-5'>
 
                     <div className='text-left'>
-                        <h2 className='mb-3' style={{ color: 'red' }}>Return Purchase Invoice</h2>
+                        <h2 className='mb-3' >Return Purchase Invoice</h2>
                     </div>
                     {loading ?
 
@@ -205,59 +144,37 @@ function ReturnDetails() {
 
                         <><div className='row small my-2'>
                             <div className='col-sm-4 col-lg-4 col-md-4 my-2'>
-                                <div>
-                                    <div>Supplier</div>
-                                    <strong>{supplierInfo?.name}</strong>
-                                    <strong>{supplierInfo?.address} </strong>
-                                    {!!supplierInfo?.contact_number && <div className='mt-1'>Phone: {supplierInfo?.contact_number}</div>}
-                                    {supplierInfo?.email && <div>Email: {supplierInfo?.email}</div>}
 
-                                </div>
+                               {invoices && <div>
+                                    <div>Supplier</div>
+                                    <strong>{invoices[0]?.supplier_name}</strong>
+                                     <div>{invoices[0]?.supplier_contact_number}</div>
+                                    <strong>{invoices[0]?.supplier_address} </strong> 
+
+                                </div>}
                             </div>
 
                             <div className='row col-sm-4 col-lg-8 col-md-8 my-2'>
-                                <div className='ms-auto col-sm-8 col-lg-8 col-md-8'>
-                                    <div><strong>Supplier Invoice:</strong><span>{invoices.length && invoices[0]?.supplier_invoice_id}</span></div>
-                                    <div><strong>Local Invoice:</strong><span>{invoices.length && invoices[0]?.local_invoice}</span></div>
-                                    <div className='mt-2'><strong>Total Amount:</strong><span>{totalAmount} Tk</span></div>
-                                    <div><strong>Invoice Date:</strong><span>{invoices.length && invoices[0]?.invoice_date}</span></div>
-                                    <div><strong>Create Date-Time:</strong><span>{invoices.length && invoices[0]?.created_at}</span></div>
-                                    <div><strong>Remarks:</strong><span>{invoices.length && invoices[0]?.common_remarks}</span></div>
-                                </div>
+                                {invoices && <div className='ms-auto col-sm-8 col-lg-8 col-md-8'> 
+                                    <div><strong>Invoice: </strong><span>{invoices[0]?.purchase_return_invoice}</span></div>
+                                    <div className='mt-2'><strong>Total Amount: </strong><span>{totalAmount} Tk</span></div> 
+                                    <div><strong>Create Date-Time: </strong><span>{ invoices[0]?.created_at}</span></div> 
+                                </div>}
                             </div>
-                        </div><div className='row small my-2'>
-                                <div className='row-sm-4 row-lg-4 row-md-4 my-2'>
-                                    <strong style={{ fontSize: '18px' }}>Return Type: <span style={{ color: 'red' }}>{supplierInvoiceinfo?.return_type}</span></strong>
-                                    <div className='mt-1'>Return Amount: <span style={{ color: 'red' }}>{totalAmount}</span> TK</div>
-                                </div>
-                            </div><div className='row small my-2'>
-                                <div className='row-sm-4 row-lg-4 row-md-4 my-2'>
-                                    <div className='mt-1'>Invoice Items:</div>
-
-                                </div>
-                            </div><div className='row small my-2'>
-                                {/* <div className='row small my-2' style={{ overflow: 'scroll', height: '15em' }}> */}
-                                <div className='row small my-2' style={{height: '15em' }}>
-                                    {invoices?.filter(inv => inv.return !== 0).map((item, index) => {
-
-
+                        </div>  
+                            <div className='row   my-2'> 
+                                <div className='row   my-2' style={{height: '15em' }}>
+                                    {invoices?.map((item, index) => { 
                                         return (
                                             <div className='col-sm-4 col-lg-4 col-md-4' key={index}>
-                                                <p className='mt-1'>Item-{++index}.<strong style={{ color: 'red' }}>{item.itemName.toUpperCase()}</strong></p>
-                                                <p className='my-1'>Purchades Qty: {item.item_qty}</p>
-                                                <p className='my-1'>Purchades Rate: {item.unitPrice}</p>
-                                                <p className='my-1'><strong style={{ color: 'red' }}>Returned Qty: {item.return_qty}</strong></p>
-                                                <p className='my-1'><strong style={{ color: 'red' }}>Returned Amount (for {item.return_qty} pcs): {(item.return_qty * item.unitPrice).toFixed(2)}</strong></p>
+                                                <p className='mt-1'>Item-{++index}: <strong >{item.item_name.toUpperCase()} {item.item_type_name} </strong></p>
+                                                <p className='my-1'>Return Qty: {item.return_quantity}</p>
+                                                <p className='my-1'>Unit Price: {item.unit_price}</p> 
+                                                <p className='my-1'><strong >Total Amount (for {item.return_quantity} pcs): {(item.return_quantity * item.unit_price).toFixed(2)}</strong></p>
                                             </div>
                                         );
                                     })}
-                                </div>
-
-                                <div className='row m-0'>
-                                    <div className='col-md-12 col-lg-12 text-end'>
-                                        <Button variant='success' className='' onClick={cancelPurchaseReturn}><span className='fs-5 me-1'><FaHandPointRight /></span>Cancel Return Puchase</Button>
-                                    </div>
-                                </div>
+                                </div> 
                             </div></>
                     }
                 </div>

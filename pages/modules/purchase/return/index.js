@@ -1,13 +1,12 @@
 import * as moment from 'moment';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useState } from "react";
-import { Button, Form, Modal } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import DataTable from 'react-data-table-component';
 import { HeadSection, ViewIcon } from '../../../../components';
 import toast from "../../../../components/Toast/index";
 import Axios from '../../../../utils/axios';
-import { useRouter } from 'next/router';
-import Breadcrumbs from '../../../../components/Breadcrumbs';
 import { getSSRProps } from '../../../../utils/getSSRProps';
 
 
@@ -146,12 +145,13 @@ export default function ListView({accessPermissions}) {
   const fetchItemList = async () => {
 
     let isSubscribed = true;
-    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase/invoice`, {
-      action: "getAllSupplierReturnInvoice",
+    await http.post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/purchase-product`, {
+      action: "getAllPurchaseReturnInvoice",
     })
       .then((res) => {
+        console.log("🚀 ~ .then ~ res:", res)
         if (isSubscribed) {
-          setItemList(res?.data);
+          setItemList(res?.data?.data);
           setFilteredData(res?.data?.data);
         }
       })
@@ -196,25 +196,19 @@ export default function ListView({accessPermissions}) {
 
     {
       name: <span className='fw-bold' >Invoice Number</span>,
-      selector: row => row.local_invoice,
+      selector: row => row.purchase_return_invoice	,
+      width: "20%",
+      sortable: true,
+    }, 
+    {
+      name: <span className='fw-bold' >Return Items</span>,
+      selector: row => row.quantity,
       width: "20%",
       sortable: true,
     },
     {
       name: <span className='fw-bold' >Date</span>,
       selector: row => moment(row.created_at).format('DD/MM/YYYY'),
-      width: "20%",
-      sortable: true,
-    },
-    {
-      name: <span className='fw-bold' >Returned Items</span>,
-      selector: row => row.total_item,
-      width: "20%",
-      sortable: true,
-    },
-    {
-      name: <span className='fw-bold ' >Returned Quantity</span>,
-      selector: row => row.total_returned_qty,
       width: "20%",
       sortable: true,
     },
@@ -242,7 +236,7 @@ export default function ListView({accessPermissions}) {
 
               <div className="d-flex border-bottom title-part-padding align-items-center">
                 <div>
-                  <h4 className="card-title mb-0">Supplier Invoice</h4>
+                  <h4 className="card-title mb-0">Purchase Return</h4>
                 </div>
                 <div className="ms-auto flex-shrink-0">
 

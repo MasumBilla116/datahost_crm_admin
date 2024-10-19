@@ -9,11 +9,10 @@ import ML_Housekeeping from "./moduleList/Housekeeping";
 import ML_Inventory from "./moduleList/Inventory";
 import ML_Locker from "./moduleList/Locker";
 import ML_Purchase from "./moduleList/Purchase";
-import ML_RoomService from "./moduleList/RoomService";
+import ML_POS from "./moduleList/POS";
 import ML_Settings from "./moduleList/Settings";
 import ML_Suppliers from "./moduleList/Suppliers";
 import ML_Transport from "./moduleList/Transport";
-import ML_Booking from "./moduleList/Booking";
 
 
 export default function LeftSidebar2() {
@@ -61,6 +60,7 @@ export default function LeftSidebar2() {
             {activeModule === "housekeeping" && <ML_Housekeeping pathname={pathname}/>} 
             {activeModule === "locker" && <ML_Locker pathname={pathname}/>}
             {activeModule === "transport" && <ML_Transport pathname={pathname}/>}
+            {activeModule === "pos" && <ML_POS pathname={pathname}/>}
             {activeModule === "inventory" && <ML_Inventory pathname={pathname}/>}
             {activeModule === "purchase" && <ML_Purchase pathname={pathname}/>}
             {activeModule === "supplier" && <ML_Suppliers pathname={pathname}/>}
