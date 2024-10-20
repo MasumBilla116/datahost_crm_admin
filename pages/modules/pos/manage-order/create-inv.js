@@ -174,7 +174,8 @@ const CreatePaymentForm = ({
     payment_note: "",
     discount: null,
     payableAmount: grandTotalAmount,
-    discountAmount: 0, 
+    discountAmount: 0,
+    subtotal: parseFloat(grandTotalAmount) ,
   });
 
   let dataset = { ...payment, totalAmount };
@@ -186,16 +187,15 @@ const CreatePaymentForm = ({
         notify("error", `Discount can not be Bigger then main`);
       }
       setTotalAmount(grandTotalAmount - parseFloat(discount));
-      const discountAmount  = (grandTotalAmount * discount) / 100;
-      
+      const discountAmount = (grandTotalAmount * discount) / 100;
+
       setPayment({
         ...payment,
-        payableAmount: (grandTotalAmount - discountAmount),
+        payableAmount: grandTotalAmount - discountAmount,
         discountAmount: discountAmount,
         discount: discount,
       });
-    }else{
-
+    } else {
       setPayment({
         ...payment,
         [name]: value,
@@ -239,46 +239,42 @@ const CreatePaymentForm = ({
               </div>
 
               <div className="col-md-6">
-              <Form.Group>
-                <Form.Label>Discount (%)</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="Discount (%)"
-                  name="discount"
-                  defaultValue={payment.discount}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
+                <Form.Group>
+                  <Form.Label>Discount (%)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="Discount (%)"
+                    name="discount"
+                    defaultValue={payment.discount}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
               </div>
-              
             </div>
             <div className="row">
-            <Form.Group className="mt-2"  controlId="validationCustom02">
-                  <Form.Label>Payment Type</Form.Label>
-                  <Select2
-                    options={accounts_options?.map(({ id, account_name }) => ({
-                      value: id,
-                      label: account_name,
-                    }))}
-                    onChange={(e) =>
-                      setPayment((prev) => ({
-                        ...prev,
-                        account: e?.value,
-                      }))
-                    }
-                    name="account"
-                    className="basic-multi-select"
-                    classNamePrefix="select"
-                    closeMenuOnSelect={true}
-                  />
-                  <Form.Control.Feedback
-                    type="invalid"
-                    style={{ color: "red" }}
-                  >
-                    Please provide a mobile number.
-                  </Form.Control.Feedback>
-                </Form.Group>
+              <Form.Group className="mt-2" controlId="validationCustom02">
+                <Form.Label>Payment Type</Form.Label>
+                <Select2
+                  options={accounts_options?.map(({ id, account_name }) => ({
+                    value: id,
+                    label: account_name,
+                  }))}
+                  onChange={(e) =>
+                    setPayment((prev) => ({
+                      ...prev,
+                      account: e?.value,
+                    }))
+                  }
+                  name="account"
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                  closeMenuOnSelect={true}
+                />
+                <Form.Control.Feedback type="invalid" style={{ color: "red" }}>
+                  Please provide a mobile number.
+                </Form.Control.Feedback>
+              </Form.Group>
               <Form.Group className="mt-2">
                 <Form.Label>note:</Form.Label>
                 <Form.Control
@@ -305,25 +301,16 @@ const CreatePaymentForm = ({
                 <p>({totalQty})</p>
               </div>
             </div>
-
             <div className="row justify-content-center payment-details ">
               <div className="col-md-8">
                 <p>Discount</p>
               </div>
 
               <div className="col-md-4">
-                <p>{payment?.discount}</p>
+                <p>{payment?.discount ?? "--"}</p>
               </div>
             </div>
 
-            <div className="row justify-content-center payment-details ">
-              <div className="col-md-8">
-                <p>Delivery Charge</p>
-              </div>
-              <div className="col-md-4">
-                <p>{deliveryCharge}</p>
-              </div>
-            </div>
             <div
               className="row justify-content-center payment-details "
               style={{
@@ -338,8 +325,27 @@ const CreatePaymentForm = ({
               <div className="col-md-4">
                 <p>{netTotal}</p>
               </div>
+            </div> 
+
+            <div className="row justify-content-center payment-details ">
+              <div className="col-md-8">
+                <p>Delivery Charge</p>
+              </div>
+              <div className="col-md-4">
+                <p>{deliveryCharge}</p>
+              </div>
             </div>
 
+            <div className="row justify-content-center payment-details  bg-warning">
+              <div className="col-md-8">
+                <p>Subtotal</p>
+              </div>
+
+              <div className="col-md-4">
+                <p>{payment.subtotal}</p>
+              </div>
+            </div>
+            
             <div className="row justify-content-center payment-details ">
               <div className="col-md-8">
                 <p>Discount Amount</p>
@@ -350,13 +356,15 @@ const CreatePaymentForm = ({
               </div>
             </div>
 
+            
+
             <div className="row justify-content-center payment-details  bg-danger">
               <div className="col-md-8">
                 <p>Payable Amount</p>
               </div>
 
               <div className="col-md-4">
-                <p>{ payment.payableAmount }</p>
+                <p>{payment.payableAmount}</p>
               </div>
             </div>
 
@@ -518,7 +526,6 @@ const CreateInvoice = () => {
   const { http } = Axios();
   const router = useRouter();
   const { pathname } = router;
- 
 
   const [selectedDate, setSelectedDate] = useState(
     format(new Date(), "yyyy-MM-dd")
@@ -536,14 +543,14 @@ const CreateInvoice = () => {
   const [tables, setTables] = useState([]);
   const [totalQty, setTotalQty] = useState(null);
   //get all hotel customers
-  const [customers, setCustomers] = useState(); 
+  const [customers, setCustomers] = useState();
   const [activeBooking, setActiveBooking] = useState([]);
   const [activeCstmrRm, setActiveCstmrRm] = useState([]);
 
-  const [invoice, setInvoice] = useState({ 
+  const [invoice, setInvoice] = useState({
     inv_date: format(new Date(), "yyyy-MM-dd"),
-    customer_id: null, 
-    deliveryCharge: deliveryCharge,  
+    customer_id: null,
+    deliveryCharge: deliveryCharge,
   });
 
   const getAllCustomer = useCallback(async () => {
@@ -551,16 +558,15 @@ const CreateInvoice = () => {
       .post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/customers`, {
         action: "getAllCustomer",
       })
-      .then((res) => { 
-        console.log("🚀 ~ .then ~ res?.data?.data:", res?.data?.data)
-        setCustomers(res?.data?.data);  
+      .then((res) => {
+        console.log("🚀 ~ .then ~ res?.data?.data:", res?.data?.data);
+        setCustomers(res?.data?.data);
       });
   }, []);
 
   useEffect(() => {
     getAllCustomer();
   }, [getAllCustomer]);
- 
 
   //fetching all filtered food item, bydefault all
   const [categories, setCategories] = useState([]);
@@ -570,16 +576,16 @@ const CreateInvoice = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [search, setSearch] = useState("");
 
-  const fetchFilteredItems = async  () =>{
+  const fetchFilteredItems = async () => {
     await http
       .post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos`, {
         action: "getAllItems",
         category_id: categoryId,
-        search : search
+        search: search,
       })
-      .then((res) => { 
-        if(fetchItems?.length == 0){
-          setFetchItems(res?.data?.data); 
+      .then((res) => {
+        if (fetchItems?.length == 0) {
+          setFetchItems(res?.data?.data);
         }
         setFilteredData(res?.data?.data);
       })
@@ -590,8 +596,8 @@ const CreateInvoice = () => {
 
   useEffect(() => {
     fetchFilteredItems();
-  }, [categoryId,search]);
- 
+  }, [categoryId, search]);
+
   const categoryList = useCallback(async () => {
     setCatLoading(true);
     await http
@@ -613,32 +619,33 @@ const CreateInvoice = () => {
 
   //handle change
   const handleChange = (e) => {
+    console.log("🚀 ~ handleChange ~ e.target:", e?.target?.name)
     if (e.target) {
       if (e.target.name === "deliveryCharge") {
-        setDeliveryCharge(e.target.value);
-      } else {
+        setDeliveryCharge( e?.target?.value);
+      }
+       
         setInvoice((prev) => ({
           ...prev,
-          [e.target.name]: e.target.value,
+          [e?.target?.name]: e?.target?.value,
         }));
-      }
-    }   else if (e.name === "customer_id") {
+      
+    } else if (e.name === "customer_id") {
       setInvoice((prev) => ({
         ...prev,
-        customer_id: e.value,
+        customer_id:  e.value,
       }));
-    }  
+    } 
   };
- 
 
-  const storeItems = (item) => {  
-    if (!item_idsArr.includes(item.id)) { 
-      const  id = item?.id;
-      const  tax_head = item?.tax_head;
-      const  tax_head_tax = item?.tax_head?.tax;
-      const  sales_price = item?.sales_price;
-      const  stock = item?.stock;
-      const  item_name = item?.item_name; 
+  const storeItems = (item) => {
+    if (!item_idsArr.includes(item.id)) {
+      const id = item?.id;
+      const tax_head = item?.tax_head;
+      const tax_head_tax = item?.tax_head?.tax;
+      const sales_price = item?.sales_price;
+      const stock = item?.stock;
+      const item_name = item?.item_name;
 
       setItemIdsArr((prev) => [...prev, item.id]);
       let tax = 0;
@@ -845,31 +852,32 @@ const CreateInvoice = () => {
 
   const submitPaymentForm = async (payment) => {
     const body = {
+     
       ...invoice,
       ...payment,
       items: itemsArr,
       grandTotalAmount,
-      action: "createFoodOrder",
+      action: "addSales",
       craetionType: "payment",
-    };
-      console.log("🚀 ~ submitPaymentForm ~ body:", body)
-      return;
-
+    }; 
+    console.log("🚀 ~ submitPaymentForm ~ body:", body)
+    
     if (!payment?.account) {
       notify("error", `Please Select the account`);
-    }else if (itemsArr.length == 0) {
+    } else if (itemsArr.length == 0) {
       notify("error", `Please select the items`);
       handleClose();
     } else {
       await http
         .post(
-          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
+          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos`,
           body
         )
         .then((res) => {
+          console.log("🚀 ~ .then ~ res:", res)
           notify("success", "successfully Added!");
           handleClose();
-          router.push(`/modules/restaurant/manage-order`);
+          // router.push(`/modules/restaurant/manage-order`);
         })
         .catch((e) => {
           const msg = e.response?.data?.response;
@@ -1024,7 +1032,6 @@ const CreateInvoice = () => {
     borderRadius: "5px",
     color: "aliceblue",
   };
- 
 
   return (
     <>
@@ -1056,17 +1063,12 @@ const CreateInvoice = () => {
                             <Form.Label>Customer</Form.Label>
                             <Select2
                               options={customers?.map(
-                                ({
-                                  id,
-                                  first_name,
-                                  last_name,
-                                  mobile, 
-                                }) => ({
+                                ({ id, first_name, last_name, mobile }) => ({
                                   value: id,
-                                  label: `${first_name} ${last_name} - $${mobile}`, 
+                                  label: `${first_name} ${last_name} - $${mobile}`,
                                   name: "customer_id",
                                 })
-                              )} 
+                              )}
                               onChange={handleChange}
                             />
                           </Form.Group>
@@ -1127,17 +1129,12 @@ const CreateInvoice = () => {
                       <>
                         <Select2
                           options={fetchItems.map(
-                            ({
-                              id,
-                              item_name,
-                              sales_price,  
-                              stock
-                            }) => ({
+                            ({ id, item_name, sales_price, stock }) => ({
                               value: id,
-                              id: id, 
+                              id: id,
                               label: `${item_name} - $${sales_price} stock: [${stock}]`,
                               item_name: item_name,
-                              sales_price: sales_price, 
+                              sales_price: sales_price,
                               tax: 0,
                               taxCalculate: 0,
                               stock: stock,
@@ -1465,7 +1462,7 @@ const CreateInvoice = () => {
               <div className="card-body">
                 <div className="row mb-3">
                   <Form.Group className="col-md-6">
-                    <Form.Label>Categories</Form.Label> 
+                    <Form.Label>Categories</Form.Label>
                     {catLoading ? (
                       <Select>
                         <option value="">loading...</option>
@@ -1473,7 +1470,7 @@ const CreateInvoice = () => {
                     ) : (
                       <Select
                         value={categoryId}
-                        onChange={(e)=>setCategoryId(e.target.value)}
+                        onChange={(e) => setCategoryId(e.target.value)}
                         name="category_id"
                       >
                         <option value="">Select Category</option>
@@ -1481,9 +1478,7 @@ const CreateInvoice = () => {
                           categories?.map((cat, ind) => (
                             <>
                               {cat?.children_recursive?.length != 0 ? (
-                                <option   value={cat.id}>
-                                  {cat.name}
-                                </option>
+                                <option value={cat.id}>{cat.name}</option>
                               ) : (
                                 <option value={cat.id}>{cat.name}</option>
                               )}
@@ -1504,7 +1499,7 @@ const CreateInvoice = () => {
                       value={search}
                       onChange={(e) => {
                         e.preventDefault();
-                        setSearch(e.target.value)
+                        setSearch(e.target.value);
                       }}
                       placeholder="Search Name"
                     />
@@ -1515,7 +1510,11 @@ const CreateInvoice = () => {
                   {filteredData.map((item, index) => (
                     <Fragment key={index}>
                       <div
-                        className={`box-item position-relative ${item_idsArr.includes(item.id) ? "border-dark-info" : ""} `}
+                        className={`box-item position-relative ${
+                          item_idsArr.includes(item.id)
+                            ? "border-dark-info"
+                            : ""
+                        } `}
                         onClick={() => storeItems(item)}
                       >
                         <div style={qtyStyle}>
@@ -1527,18 +1526,27 @@ const CreateInvoice = () => {
                             alt="responsive"
                           />
                         ) : (
-                          
                           <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        width="80px"
-                        height="80px"
-                        fill="none"
-                      >
-                        <rect width="24" height="24" fill="#f0f0f0" />
-                        <path d="M3 3H21V21H3V3Z" stroke="#ccc" stroke-width="2" />
-                        <circle cx="12" cy="12" r="4" stroke="#ccc" stroke-width="2" />
-                      </svg>
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            width="80px"
+                            height="80px"
+                            fill="none"
+                          >
+                            <rect width="24" height="24" fill="#f0f0f0" />
+                            <path
+                              d="M3 3H21V21H3V3Z"
+                              stroke="#ccc"
+                              stroke-width="2"
+                            />
+                            <circle
+                              cx="12"
+                              cy="12"
+                              r="4"
+                              stroke="#ccc"
+                              stroke-width="2"
+                            />
+                          </svg>
                         )}
 
                         <p>{item.item_name}</p>
