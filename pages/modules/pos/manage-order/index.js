@@ -1,5 +1,4 @@
 import { createTheme } from "@mui/material/styles";
-import * as moment from "moment";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useContext, useState } from "react";
@@ -103,31 +102,31 @@ export default function ListView({ accessPermissions }) {
     setLoader(true);
     let isSubscribed = true;
     setPending(true);
-    await http
-      .post(
-        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
-        formData
-      )
-      .then((res) => {
-        if (isSubscribed) {
-          setLoader(false);
-          notify("success", "successfully deleted!");
-          handleExitDelete();
-          setPending(false);
-          setFilterValue(( prev)=>({
-            ...prev,
-            filter : true
-          })); 
-          fetchHoldDataList(); // fetch hold-data list and update notification
-        }
-      })
-      .catch((e) => {
-        console.log("error delete !");
-        setPending(false);
-        setLoader(false);
-      });
+    // await http
+    //   .post(
+    //     `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
+    //     formData
+    //   )
+    //   .then((res) => {
+    //     if (isSubscribed) {
+    //       setLoader(false);
+    //       notify("success", "successfully deleted!");
+    //       handleExitDelete();
+    //       setPending(false);
+    //       setFilterValue(( prev)=>({
+    //         ...prev,
+    //         filter : true
+    //       })); 
+    //       fetchHoldDataList(); // fetch hold-data list and update notification
+    //     }
+    //   })
+    //   .catch((e) => {
+    //     console.log("error delete !");
+    //     setPending(false);
+    //     setLoader(false);
+    //   });
 
-    fetchItemList();
+    // fetchItemList();
 
     return () => (isSubscribed = false);
   };
@@ -194,18 +193,19 @@ export default function ListView({ accessPermissions }) {
 
   const fetchItemList = async () => {
     let isSubscribed = true;
-    setTblLoader(true);
+    // setTblLoader(true);
 
     if (!filteredData?.[currentPage] || filterValue.filter === true) {
       await http
         .post(
-          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order?page=${currentPage}&perPageShow=${perPageShow}`,
+          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos?page=${currentPage}&perPageShow=${perPageShow}`,
           {
             action: "getAllInvoicesList",
             filterValue: filterValue,
           }
         )
         .then((res) => {
+          console.log("🚀 ~ .getAllInvoicesList ~ res:", res)
           if (isSubscribed) {
             setFilteredData((prev) => ({
               ...prev,
@@ -243,7 +243,7 @@ export default function ListView({ accessPermissions }) {
           {accessPermissions.listAndDetails && (
             <li>
               <Link
-                href={`/modules/restaurant/manage-order/details/${invoice_id}`}
+                href={`/modules/pos/manage-order/details/${invoice_id}`}
               >
                 <a>
                   <ViewIcon />
@@ -254,7 +254,7 @@ export default function ListView({ accessPermissions }) {
           {accessPermissions.createAndUpdate && is_hold === 1 && (
             <li>
               <Link
-                href={`/modules/restaurant/manage-order/update/${invoice_id}`}
+                href={`/modules/pos/manage-order/update/${invoice_id}`}
               >
                 <a>
                   <EditIcon />
@@ -281,34 +281,25 @@ export default function ListView({ accessPermissions }) {
   const columns = [
     {
       name: "Invoice Number",
-      selector: (row) => row.invoice_number,
+      selector: (row) => row.sales_invoice,
       sortable: true,
     },
     {
       name: "Customer",
-      selector: (row) => row?.first_name || row?.guest_customer,
+      selector: (row) => `${row?.first_name}  ${row?.last_name}`,
       sortable: true,
     },
-    {
-      name: "Remarks",
-      selector: (row) => <div className="text-capitalize">{row.remarks}</div>,
-      sortable: true,
-    },
+    
     {
       name: "Invoice Date",
-      selector: (row) => row.invoice_date,
+      selector: (row) => row.created_at,
       sortable: true,
     },
-      // {
-      //   name: "Total Item",
-      //   selector: (row) => row.total_item,
-      //   cell: row=> <div style={{textAlign:"center", width:"80%"}}>{row.total_item}</div>,
-      //   sortable: true,
-      // },
+       
     {
       name: "Total Quantity",
-      selector: (row) =>  {row.total_item_qty},
-      cell: row=> <div style={{textAlign:"center", width:"80%"}}>{row.total_item_qty}</div>,
+      selector: (row) =>  {row.total_items},
+      cell: row=> <div style={{textAlign:"center", width:"80%"}}>{row.total_items}</div>,
       sortable: true,
     },
     {
@@ -316,25 +307,15 @@ export default function ListView({ accessPermissions }) {
       selector: (row) =>  {row.total_amount} ,
       sortable: true, 
       cell: row=> <div style={{textAlign:"right",width:"80%"}}>{golbalCurrency[0]?.symbol}{row.total_amount}</div>
-    }, 
-    {
-      name: "Hold",
-      selector: (row) => row.is_hold == 1 ? <span className="text-danger fw-bold"> Yes </span> : <span className="fw-bold text-success">No</span>,
-      sortable: true,
-    },
+    },  
     {
       name: "Status",
-      selector: (row) => row.is_paid == 1 ? <span className="text-success fw-bold"> Paid </span> : <span className="fw-bold text-danger ">Due</span>,
+      selector: (row) => row.payment_status == 1 ? <span className="text-success fw-bold"> Paid </span> : <span className="fw-bold text-danger ">Due</span>,
       sortable: true,
-    },
-    {
-      name: "Created At",
-      selector: (row) => moment(row.created_at).format("DD/MM/YYYY"),
-      sortable: true,
-    },
+    }, 
     {
       name: "Action",
-      selector: (row) => actionButton(row.id, row.status,row.is_hold),
+      selector: (row) => actionButton(row.id, row.status,row.payment_status),
     },
   ];
 
@@ -349,16 +330,13 @@ export default function ListView({ accessPermissions }) {
   //breadcrumbs
   const breadcrumbs = [
     { text: "Dashboard", link: "/dashboard" },
-    { text: "Restaurant Invoices", link: "/modules/restaurant/food-order" },
+    // { text: "Restaurant Invoices", link: "/modules/restaurant/food-order" },
   ];
 
   const dynamicStatusList = [
-    { title: "All", value: "all", selected: true },
-    { title: "Deleted", value: "deleted" },
-    { title: "Daily", value: "daily" },
-    { title: "Weekly", value: "weekly" },
-    { title: "Monthly", value: "monthly" },
-    { title: "Yearly", value: "yearly" },
+    { title: "All", value: "", selected: true },
+    { title: "Paid", value: 1 },
+    { title: "Due", value: 0 }, 
   ]; 
 
   return (

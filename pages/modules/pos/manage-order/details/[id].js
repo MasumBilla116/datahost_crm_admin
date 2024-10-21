@@ -9,11 +9,11 @@ import Select2 from "../../../../../components/elements/Select2";
 
 import BarcodeGenerator from "../../../../../components/Barcode";
 import toast from "../../../../../components/Toast/index";
+import themeContext from "../../../../../components/context/themeContext";
 import PrintButton from "../../../../../components/elements/PrintButton";
 import HotelLogo from "../../../../../components/hotelLogo";
 import Axios from "../../../../../utils/axios";
 import { getSSRProps } from "../../../../../utils/getSSRProps";
-import themeContext from "../../../../../components/context/themeContext";
 
 export const getServerSideProps = async (context) => {
   const { permission, query, accessPermissions } = await getSSRProps({
@@ -101,11 +101,12 @@ const CreateForm = ({ onSubmit, invoiceId, loading }) => {
     let isSubscribed = true;
     setPending(true);
     await http
-      .post(
-        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
-        { action: "getInvoiceInfo", invoice_id: invoiceId }
-      )
+      .post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos`, {
+        action: "getInvoiceDetails",
+        invoice_id: invoiceId,
+      })
       .then((res) => {
+        console.log("🚀 ~ .getInvoiceDetails ~ res:", res);
         if (isSubscribed) {
           setInvoiceInfo(res.data.data);
           setPayment((prev) => ({
@@ -295,7 +296,7 @@ const CreateForm = ({ onSubmit, invoiceId, loading }) => {
 
 function VoucherDetails({ accessPermissions }) {
   const context = useContext(themeContext);
-  const {golbalCurrency} = context;
+  const { golbalCurrency } = context;
 
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(false);
@@ -318,23 +319,18 @@ function VoucherDetails({ accessPermissions }) {
 
   //state declaration
   const [invoices, setInvoices] = useState([]);
+  console.log("🚀 ~ VoucherDetails ~ invoices:", invoices);
   useEffect(() => {
-    const controller = new AbortController();
-
     //fetching invoice items
     const getVoucherDetails = async () => {
-      let body = {};
-      body = {
-        action: "getInvoiceInfo",
+      let body = {
+        action: "getInvoiceDetails",
         invoice_id: id,
-        holddata: holddata || false,
       };
+      console.log("🚀 ~ getVoucherDetails ~ body:", body);
       await http
-        .post(
-          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
-          body
-        )
-        .then((res) => {
+        .post(`${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos`, body)
+        .then((res) => { 
           setInvoices(res?.data?.data || []);
         })
         .catch((err) => {
@@ -342,44 +338,42 @@ function VoucherDetails({ accessPermissions }) {
         });
     };
 
-    isReady && getVoucherDetails();
-
-    return () => controller.abort();
-  }, [id, isReady]);
+    getVoucherDetails();
+  }, []);
 
   const submitForm = async (items) => {
     let isSubscribed = true;
     setLoading(true);
-    await http
-      .post(
-        `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
-        items
-      )
-      .then((res) => {
-        if (isSubscribed) {
-          notify("success", "successfully Added!");
-          handleClose();
-          setLoading(false);
-        }
-      })
-      .catch((e) => {
-        const msg = e.response?.data?.response;
+    // await http
+    //   .post(
+    //     `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
+    //     items
+    //   )
+    //   .then((res) => {
+    //     if (isSubscribed) {
+    //       notify("success", "successfully Added!");
+    //       handleClose();
+    //       setLoading(false);
+    //     }
+    //   })
+    //   .catch((e) => {
+    //     const msg = e.response?.data?.response;
 
-        if (typeof msg == "string") {
-          notify("error", `${msg}`);
-        } else {
-          if (msg?.account) {
-            notify("error", `${msg.account.Account}`);
-          }
-          if (msg?.price) {
-            notify("error", `${msg.price.Price}`);
-          }
-          if (msg?.foods) {
-            notify("error", `please select atleast one food!`);
-          }
-        }
-        setLoading(false);
-      });
+    //     if (typeof msg == "string") {
+    //       notify("error", `${msg}`);
+    //     } else {
+    //       if (msg?.account) {
+    //         notify("error", `${msg.account.Account}`);
+    //       }
+    //       if (msg?.price) {
+    //         notify("error", `${msg.price.Price}`);
+    //       }
+    //       if (msg?.foods) {
+    //         notify("error", `please select atleast one food!`);
+    //       }
+    //     }
+    //     setLoading(false);
+    //   });
 
     return () => (isSubscribed = false);
   };
@@ -406,178 +400,108 @@ function VoucherDetails({ accessPermissions }) {
   //table data
   const columnData = [
     {
-      name: <span className="fw-bold">Food Name</span>,
-      selector: (row) =>
-        <span className="text-capitalize">{row?.food_name}</span> || (
-          <span className="text-capitalize">{row?.setmenuName}</span>
-        ),
+      name: <span className="fw-bold">Item name</span>,
+      selector: (row) => <span className="text-capitalize">{row?.item_name}</span>  
     },
     {
-      name: <span className="fw-bold">Unit Price</span>,
+      name: <span className="fw-bold">Item code</span>,
+      selector: (row) => <span className="text-capitalize">{row?.item_code}</span>  
+    },
+    {
+      name: <span className="fw-bold">Sales Price</span>,
       selector: (row) => (
         <div
           className="text-capitalize"
           style={{ textAlign: "right", width: "80px" }}
         >
-          {golbalCurrency[0]?.symbol}{row?.unit_price}{" "}
+          {golbalCurrency[0]?.symbol}{" "}
+          {row?.sales_price}
         </div>
-      ),
-      // width: "60%"
+      ), 
     },
     {
       name: <span className="fw-bold">Qty</span>,
-      selector: (row) => row?.qty,
-      // width: "10%"
+      selector: (row) => row?.sales_item_qty, 
     },
-    {
-      name: <span className="fw-bold">remarks</span>,
-      selector: (row) => (
-        <span className="text-capitalize">{row?.remarks}</span>
-      ),
-      // width: "10%"
-    },
+     
     {
       name: <span className="fw-bold">Total Price</span>,
       selector: (row) => (
         <div className="text-end" style={{ textAlign: "right", width: "80px" }}>
-           {golbalCurrency[0]?.symbol}{row?.total_price}
+          {golbalCurrency[0]?.symbol}
+          {row?.sales_total_price}
         </div>
       ),
       //   width: "60%"
     },
   ];
-  const rowData = invoices?.invoice_list;
+  const rowData = invoices;
 
   function refreshPage() {
     window.location.reload(false);
   }
 
+
+  const handleSalesReturn = () =>{
+    router.push(`/modules/pos/sales-return/${invoices[0]?.id}`);
+  }
+ 
+
   return (
     <div>
-      <div className="card shadow pb-5 m-4">
-        <div id="printME" className="p-5">
-          <div>
-            <div className="text-center fs-3">
-              {/* <h1 className='mb-3'>(Company Logo)</h1> */}
-              <HotelLogo id={id} invoiceName="Restaurant Invoice" />
+      <div className="card shadow pb-5 m-4 col-md-8 mx-auto">
+        <div id="printME" className="p-4">
+            <div className="fs-3">               
+              <HotelLogo id={id} customerInfo={invoices[0]} salesInfo={invoices[0]} invoiceBarcode={invoices[0]?.sales_invoice} />
             </div>
-            <div className="row small my-2">
-              <div className="col-sm-4 col-lg-4 col-md-4 my-2 text-capitalize">
-                <table className="">
-                  <tbody>
-                    <tr>
-                      <th style={{width:'105px'}}>Customer</th>
-                      <th style={{width:"10px"}}>:</th>
-                      <td>
-                        {invoices?.customer?.first_name == null &&
-                        invoices?.customer?.last_name == null ? (
-                          "NA"
-                        ) : (
-                          <>
-                            {" "}
-                            {invoices?.customer?.first_name +
-                              " " +
-                              invoices?.customer?.last_name}
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>Phone</th>
-                      <th>:</th>
-                      <td> {invoices.customer?.mobile || "NA"}</td>
-                    </tr>
-                    <tr>
-                      <th>Address</th>
-                      <th>:</th>
-                      <td> {invoices.customer?.address || "NA"}</td>
-                    </tr>
-                    <tr>
-                      <th>Customer Type </th>
-                      <th>:</th>
-                      <td> {invoices.customer ? "Hotel Customer" : "Walk In Customer"} </td>
-                    </tr>
-                  </tbody>
-                </table>  
-                
-                {/* <div><strong>Balance : </strong><span>{invoices.customer?.balance || "NA"}</span></div>  */}
-              </div>
-              <div className="text-center col-sm-4 col-lg-4 col-md-4 my-2">
-                {/* <div>
-                                    <strong>Voucher Number:  </strong>
-                                    <strong>{invoices?.voucher_number}</strong>
-                                </div>
-                                <div>(Bar Code)</div> */}
-                <BarcodeGenerator value={invoices?.invoice_number} />
-              </div>
-              <div className="row col-sm-4 col-lg-4 col-md-4 my-2">
-                <div className="ms-auto col-sm-8 col-lg-8 col-md-8 text-capitalize">
-                  <table>
-                    <tbody>
-                      <tr>
-                        <th style={{width:"110px"}}>Date</th>
-                        <th style={{width:"10px"}}>:</th>
-                        <td>{moment(invoices?.created_at).format("DD-MM-YYYY")}</td> 
-                      </tr>
-                      <tr>
-                        <th>Created By </th>
-                        <th>:</th>
-                        <td>{invoices?.creator?.name}</td> 
-                      </tr>
-                      <tr>
-                        <th>Remarks</th>
-                        <th>:</th>
-                        <td>{invoices?.remarks}</td> 
-                      </tr>
-                      <tr>
-                        <th>Payment Status</th>
-                        <th>:</th>
-                        <td>{invoices?.is_paid == 1 || invoices?.paid_amount > 0
-                        ? "Payment Completed"
-                        : "Pending"}</td> 
-                      </tr>
 
-                    </tbody>
-                  </table> 
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <DataTable columns={columnData} data={rowData} striped />
+          <div className="mt-4">
             <div className="row">
-              <div className="col-lg-8"></div>
-              <div className="table-responsive mt-4 col-lg-4 d-flex justify-content-end">
+              <div className="col-lg-9">
+                  <DataTable columns={columnData} data={rowData} striped />
+                  <div className="mt-4">
+                    <BarcodeGenerator value={invoices[0]?.sales_invoice}/>
+                  </div>
+              </div>
+              <div className="table-responsive col-lg-3 d-flex justify-content-end">
                 <table className="">
                   <tbody>
                     <tr>
-                      <th style={{ width: "180px" }}>Sub-total</th>
+                      <th style={{ width: "180px" }}>Subtotal</th>
                       <th>:</th>
                       <td style={{ width: "80px" }} className="text-end">
-                      {golbalCurrency[0]?.symbol}{invoices.net_total}
+                        {golbalCurrency[0]?.symbol} {" "}
+                        {invoices[0]?.sales_total_price}
                       </td>
                     </tr>
-                    {/* <tr>
-                      <th>Service Charge (%)</th>
+                    <tr>
+                      <th>Discount (%)</th>
                       <th>:</th>
-                      <td className="text-end" >{invoices.service_charge}</td>
-                    </tr> */}
+                      <td className="text-end" >{invoices[0]?.discount}</td>
+                    </tr>
+                    <tr>
+                      <th>Discount Amount</th>
+                      <th>:</th>
+                      <td className="text-end" >{invoices[0]?.discount_amount}</td>
+                    </tr>
+                    <tr className="border-top">
+                      <th>Total Amount</th>
+                      <th>:</th>
+                      <th className="text-end" >{golbalCurrency[0]?.symbol} {" "} {invoices[0]?.sales_total_price - invoices[0]?.discount_amount}</th>
+                    </tr>
+                    <tr>
+                      <th>Delivary Charge</th>
+                      <th>:</th>
+                      <td className="text-end" >{invoices[0]?.delivary_charge}</td>
+                    </tr>
                     <tr>
                       <th>Total Tax (%)</th>
                       <th>:</th>
-                      <td className="text-end">{golbalCurrency[0]?.symbol}{invoices.net_vat}</td>
-                    </tr>
-                    {/* <tr>
-                      <th>Promo</th>
-                      <th>:</th>
-                      <td className="text-end" > {invoices.net_promo}</td>
-                    </tr>
-                    <tr>
-                      <th>Discount</th>
-                      <th>:</th>
-                      <td className="text-end" >{invoices.discount ? invoices.discount : "0.00"}</td>
-                    </tr> */}
+                      <td className="text-end">
+                        {golbalCurrency[0]?.symbol} {" "}
+                        {invoices[0]?.net_vat ?? 0}
+                      </td>
+                    </tr> 
                   </tbody>
                   <tfoot>
                     <tr>
@@ -592,7 +516,10 @@ function VoucherDetails({ accessPermissions }) {
                       <th colSpan={1} className="">
                         :
                       </th>
-                      <th className="text-end">{golbalCurrency[0]?.symbol}{invoices.total_amount}</th>
+                      <th className="text-end">
+                        {golbalCurrency[0]?.symbol}  {" "}
+                        {invoices[0]?.total_amount }
+                      </th>
                     </tr>
                   </tfoot>
                 </table>
@@ -605,7 +532,7 @@ function VoucherDetails({ accessPermissions }) {
                   <hr />
                 </div>
                 <div className="text-center fw-bolder">
-                  Reciever's signature{" "}
+                  Customer Signature{" "}
                 </div>
               </div>
               <div className="w-25 mt-5">
@@ -613,7 +540,7 @@ function VoucherDetails({ accessPermissions }) {
                   <hr />
                 </div>
                 <div className="text-center fw-bolder">
-                  For management signature
+                  Seller Signature
                 </div>
               </div>
             </div>
@@ -644,9 +571,11 @@ function VoucherDetails({ accessPermissions }) {
             </Modal>
             {/* End Create Modal Form */}
           </div>
-          <div className="col-md-6 col-lg-6 text-end">
-            {/* <Button variant='success' className='' onClick={handleDownloadPdf} ><span className='fs-5 me-1'><FaFilePdf /></span>Print Consignment</Button> */}
-            <PrintButton contentId="printME" />
+          <div className="col-md-12  ">
+            <div className="d-flex justify-content-between">
+                <Button variant='danger' color="danger" onClick={handleSalesReturn} className="mr-4">Sales Return</Button>
+                <PrintButton contentId="printME" />
+            </div>
           </div>
         </div>
       </div>

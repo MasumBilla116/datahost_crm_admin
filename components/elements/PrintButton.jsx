@@ -15,7 +15,7 @@ import { FaFilePdf } from 'react-icons/fa';
 
     return (
         // <button onClick={handlePrint}>Print</button>
-        <Button variant='contained' color='success' onClick={handlePrint} ><span className='fs-5 me-1'><FaFilePdf /></span> {title !== "" ? title : "Print Invoice"}</Button>
+        <Button variant='contained' color='success' onClick={handlePrint} > <FaFilePdf />{title !== "" ? title : "Print Invoice"}</Button>
 
     );
     };

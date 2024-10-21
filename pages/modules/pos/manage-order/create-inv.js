@@ -786,107 +786,72 @@ const CreateInvoice = () => {
   const [loader, setLoader] = useState(false);
 
   const submitForm = async (reference, type) => {
-    setLoader(true);
-    const body = {
-      action: "createHoldFoodOrder",
+    // setLoader(true); 
+    const body = { 
       ...invoice,
       items: itemsArr,
-      netTotal,
-      reference,
       grandTotalAmount,
-      deliveryCharge,
-      craetionType: type,
-    };
+      action: "addSales",
+      craetionType: "duePayment",
+    }; 
+     
+     
 
-    if (invoice.invoice_type == "Dine In" && invoice.table == null) {
-      notify("error", `Select the table no`);
-      handleClose();
-    } else if (
-      invoice.invoice_type == "Delivery" &&
-      invoice.deliveryCharge == null
-    ) {
-      notify("error", `Enter the delivery Charge`);
-      handleClose();
-    } else if (
-      invoice.customer_type == "hotel-customer" &&
-      invoice.customer_id == null
-    ) {
-      notify("error", `Select the Customer`);
-      handleClose();
-    } else if (invoice.customer_type == "walk-in-customer" && type === "hold") {
-      notify("error", `Hold is only for Hotel Customers`);
-      handleClose();
-    } else if (itemsArr.length == 0) {
+    if (body?.items?.length == 0) {
       notify("error", `Please select the items`);
       handleClose();
-    } else {
-      // await http
-      //   .post(
-      //     `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/restaurant/food-order`,
-      //     body
-      //   )
-      //   .then((res) => {
-      //     notify("success", "successfully Added!");
-      //     // fetchHoldDataList();
-      //     handleClose();
-      //     setLoader(false);
-      //     router.push(`/modules/restaurant/manage-order`);
-      //   })
-      //   .catch((e) => {
-      //     setLoader(false);
-      //     const msg = e.response?.data?.response;
-      //     if (typeof msg == "string") {
-      //       notify("error", `${msg}`);
-      //     }
-      //     // if (typeof (e.response?.data?.response) == 'string') {
-      //     //   notify("error", `${e.response.data.response}`);
-      //     // }
-      //     else {
-      //       if (msg?.invoice_type) {
-      //         notify("error", `${msg.invoice_type.Invoice_type}`);
-      //       }
-      //     }
-      //   });
+    }
+    else if (body?.customer_id === "" || body?.customer_id === null ) {
+      notify("error", `Please select a customer`);
+      handleClose();
+    }  else {
+      submitToAddSales(body);
     }
   };
 
   const submitPaymentForm = async (payment) => {
-    const body = {
-     
+    const body = {     
       ...invoice,
       ...payment,
       items: itemsArr,
       grandTotalAmount,
       action: "addSales",
       craetionType: "payment",
-    }; 
-    console.log("🚀 ~ submitPaymentForm ~ body:", body)
+    };  
+    
     
     if (!payment?.account) {
       notify("error", `Please Select the account`);
     } else if (itemsArr.length == 0) {
       notify("error", `Please select the items`);
       handleClose();
-    } else {
-      await http
-        .post(
-          `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos`,
-          body
-        )
-        .then((res) => {
-          console.log("🚀 ~ .then ~ res:", res)
-          notify("success", "successfully Added!");
-          handleClose();
-          // router.push(`/modules/restaurant/manage-order`);
-        })
-        .catch((e) => {
-          const msg = e.response?.data?.response;
-          if (typeof e.response?.data?.response == "string") {
-            notify("error", `${e.response.data.response}`);
-          }
-        });
+    }else if (body?.customer_id === "" || body?.customer_id === null ) {
+      notify("error", `Please select a customer`);
+      handleClose();
+    }   else {
+      submitToAddSales(body)
     }
   };
+
+
+  const submitToAddSales = async (body) =>{
+    await http
+    .post(
+      `${process.env.NEXT_PUBLIC_SAPI_ENDPOINT}/app/pos`,
+      body
+    )
+    .then((res) => { 
+      notify("success", "successfully Added!");
+      handleClose();
+      router.push(`/modules/pos/manage-order`);
+    })
+    .catch((e) => {
+      const msg = e.response?.data?.response;
+      if (typeof e.response?.data?.response == "string") {
+        notify("error", `${e.response.data.response}`);
+      }
+    });
+  }
 
   const [invoiceId, setInvoiceId] = useState(null);
   const [invoices, setInvoices] = useState([]);
@@ -969,10 +934,10 @@ const CreateInvoice = () => {
   //breadcrumbs
   const breadcrumbs = [
     { text: "Dashboard", link: "/dashboard" },
-    { text: "Restaurant Invoices", link: "/modules/restaurant/food-order" },
+    { text: "POS Invoices", link: "/modules/pos" },
     {
       text: "Create Invoice",
-      link: "/modules/restaurant/food-order/create-inv",
+      link: "/modules/pos/create-inv",
     },
   ];
 
@@ -1038,7 +1003,7 @@ const CreateInvoice = () => {
       <div
         className="container-fluid "
         style={
-          pathname === "/modules/restaurant/food-order/create-inv"
+          pathname === "/modules/pos"
             ? { marginTop: "70px !important" }
             : {}
         }
